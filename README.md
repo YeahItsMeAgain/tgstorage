@@ -1,2 +1,2 @@
 # Backend
-uvicorn app:app
+ > `uvicorn app:app`
