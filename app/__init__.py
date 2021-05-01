@@ -26,6 +26,10 @@ oauth.register(
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
 
 from app.routes import routers
+from app.events import exceptions_handlers
 
 for router in routers:
     app.include_router(router)
+
+for status_code, handler in exceptions_handlers.items():
+    app.add_exception_handler(status_code, handler)
