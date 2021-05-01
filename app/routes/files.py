@@ -8,7 +8,6 @@ from fastapi_restful.cbv import cbv
 
 from app.utils import chunker
 from app.dependencies.connect_bot import connect_bot
-
 from app.fast_telethon import ParallelTransferrer
 from app import bot
 
@@ -24,7 +23,7 @@ router = APIRouter(
 class Files:
 	bot: TelegramClient = Depends(connect_bot)
 
-	@router.post("/upload/")
+	@router.post("/upload")
 	async def create_file(self, request: Request):
 		file_id = helpers.generate_random_long()
 		file_size = int(request.headers['content-length'])
