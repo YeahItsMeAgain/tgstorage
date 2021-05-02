@@ -2,7 +2,11 @@ from fastapi import FastAPI
 from telethon import TelegramClient
 from authlib.integrations.starlette_client import OAuth
 from starlette.config import Config
+from starlette.middleware import Middleware
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.middleware import Middleware
+from starlette.middleware.sessions import SessionMiddleware
+from starlette_wtf import CSRFProtectMiddleware
 
 # TODO: use dacite\starlette for config
 # TODO: implement login and use a bot token taken from the user object
@@ -13,7 +17,12 @@ SECRET_KEY = 'asfjafhbas8f7ha8sfha87hsfasf'
 
 config = Config('.env')  # read config from .env file
 bot = TelegramClient('bot', API_ID, API_HASH)
-app = FastAPI()
+app = FastAPI(
+    middleware=[
+        Middleware(SessionMiddleware, secret_key=SECRET_KEY),
+        Middleware(CSRFProtectMiddleware, csrf_secret=SECRET_KEY)
+    ]
+)
 
 oauth = OAuth(config)
 oauth.register(
@@ -23,7 +32,6 @@ oauth.register(
         'scope': 'openid email profile'
     }
 )
-app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
 
 from app.routes import routers
 from app.events import exceptions_handlers
