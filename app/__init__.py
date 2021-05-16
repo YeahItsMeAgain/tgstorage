@@ -35,6 +35,9 @@ oauth.register(
 
 from app.routes import routers
 from app.events import exceptions_handlers
+from app.db import Base, engine
+
+Base.metadata.create_all(bind=engine)
 
 for router in routers:
     app.include_router(router)

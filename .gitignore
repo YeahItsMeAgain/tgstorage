@@ -164,3 +164,4 @@ Thumbs.db
 frontend/
 *.session*
 forks/
+*.db
