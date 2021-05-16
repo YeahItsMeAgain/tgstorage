@@ -1,10 +1,13 @@
-from sqlalchemy import Boolean, Column, Integer, String
+from tortoise import fields, models
 
-from app.db import Base
+class User(models.Model):
+    id = fields.IntField(pk=True)
+    username = fields.CharField(max_length=128)
+    email = fields.CharField(unique=True, max_length=320)
+    bot_token = fields.CharField(max_length=120)
+    is_active = fields.BooleanField(default=True)
+    created_at = fields.DatetimeField(auto_now_add=True)
+    modified_at = fields.DatetimeField(auto_now=True)
 
-class User(Base):
-    __tablename__ = "users"
-
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True)
-    is_active = Column(Boolean, default=True)
+    class Meta:
+        table: str = 'users'

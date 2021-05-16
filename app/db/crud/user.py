@@ -1,23 +1,19 @@
-from sqlalchemy.orm import Session
-
 from app.db import models, schemas
 
-def get_user(db: Session, user_id: int):
-    return db.query(models.User).filter(models.User.id == user_id).first()
+async def get_user(user_id: int):
+    return await schemas.User.from_queryset_single(models.User.get(id=user_id))
 
 
-def get_user_by_email(db: Session, email: str):
-    return db.query(models.User).filter(models.User.email == email).first()
+async def get_user_by_email(email: str):
+    return await schemas.User.from_queryset_single(models.User.get(email=email))
 
 
-def get_users(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.User).offset(skip).limit(limit).all()
+async def get_users(skip: int = 0, limit: int = 100):
+    return await schemas.User.from_queryset(models.User.filter().offset(skip).limit(limit).all())
 
+async def get_user_or_create(user: schemas.User):
+    return await models.User.get_or_create(**user.dict(exclude_unset=True))
 
-def create_user(db: Session, user: schemas.UserBase):
-    db_user = models.User(email=user.email)
-
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-    return db_user
+async def create_user(user: schemas.User):
+    user = await models.User.create(**user.dict(exclude_unset=True))
+    return await schemas.User.from_tortoise_orm(user)

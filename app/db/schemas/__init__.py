@@ -1,6 +1,5 @@
-from .user import User, UserBase
+from .user import User
 
 __all__ = [
-    UserBase.__name__,
     User.__name__,
 ]

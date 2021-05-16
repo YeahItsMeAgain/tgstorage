@@ -1,12 +1,5 @@
-from pydantic import BaseModel
+from tortoise.contrib.pydantic import pydantic_model_creator
 
-class UserBase(BaseModel):
-	email: str
+from app.db.models import User as UserModel
 
-
-class User(UserBase):
-	id: int
-	is_active: bool
-
-	class Config:
-		orm_mode = True
+User = pydantic_model_creator(UserModel, name=UserModel.__name__)

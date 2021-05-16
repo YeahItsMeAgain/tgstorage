@@ -161,7 +161,10 @@ Thumbs.db
 
 # End of https://www.toptal.com/developers/gitignore/api/python,vscode
 
+migrations/*
+*.ini
 frontend/
 *.session*
 forks/
 *.db
+*.db.*

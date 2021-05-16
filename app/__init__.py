@@ -4,9 +4,8 @@ from authlib.integrations.starlette_client import OAuth
 from starlette.config import Config
 from starlette.middleware import Middleware
 from starlette.middleware.sessions import SessionMiddleware
-from starlette.middleware import Middleware
-from starlette.middleware.sessions import SessionMiddleware
 from starlette_wtf import CSRFProtectMiddleware
+from tortoise.contrib.fastapi import register_tortoise
 
 # TODO: use dacite\starlette for config
 # TODO: implement login and use a bot token taken from the user object
@@ -33,11 +32,17 @@ oauth.register(
     }
 )
 
-from app.routes import routers
 from app.events import exceptions_handlers
-from app.db import Base, engine
+from app.routes import routers
+from app.db import TORTOISE_ORM
 
-Base.metadata.create_all(bind=engine)
+register_tortoise(
+    app,
+    config=TORTOISE_ORM,
+    generate_schemas=True,
+    add_exception_handlers=True,
+)
+
 
 for router in routers:
     app.include_router(router)
