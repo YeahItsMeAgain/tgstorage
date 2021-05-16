@@ -7,7 +7,7 @@ import uuid
 
 from app import API_ID, API_HASH
 
-class GetDataForm(StarletteForm):
+class GetUserBotTokenForm(StarletteForm):
     bot_token = StringField(
         'Bot Token',
         validators=[
