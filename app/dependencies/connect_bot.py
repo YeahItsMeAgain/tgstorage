@@ -1,6 +1,9 @@
-from app import bot, BOT_TOKEN
+from app.dependencies.settings import get_settings
+from fastapi import Depends
+from app import bot
+from app.settings import Settings
 
-async def connect_bot():
+async def connect_bot(settings: Settings = Depends(get_settings)):
     if not bot.is_connected():
-        await bot.start(BOT_TOKEN)
+        await bot.start(settings.BOT_TOKEN)
     return bot

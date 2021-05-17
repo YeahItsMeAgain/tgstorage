@@ -44,11 +44,7 @@ class Auth:
 
             if not db_user.bot_token:
                 return RedirectResponse(url=request.url_for(User.get_data.__name__))
-            """
-				TODO:
-						• add step for getting the bot token
- 					  	• create a dependency to get current user(with bot)
-			"""
+
             return RedirectResponse('/')
         except OAuthError:
             raise HTTPException(

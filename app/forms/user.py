@@ -5,7 +5,7 @@ from wtforms import StringField, ValidationError
 from wtforms.validators import DataRequired
 import uuid
 
-from app import API_ID, API_HASH
+from app.dependencies.settings import get_settings
 
 class GetUserBotTokenForm(StarletteForm):
     bot_token = StringField(
@@ -15,8 +15,8 @@ class GetUserBotTokenForm(StarletteForm):
         ]
     )
 
-    async def async_validate_bot_token(self, bot_token):
-        client = TelegramClient(str(uuid.uuid4()), API_ID, API_HASH)
+    async def async_validate_bot_token(self, bot_token, settings= get_settings()):
+        client = TelegramClient(str(uuid.uuid4()), settings.API_ID, settings.API_HASH)
         try:
             await client.start(bot_token=bot_token.data)
             await client.log_out()

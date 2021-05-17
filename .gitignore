@@ -167,4 +167,5 @@ frontend/
 *.session*
 forks/
 *.db
+*.env
 *.db.*

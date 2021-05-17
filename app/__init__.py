@@ -6,20 +6,15 @@ from starlette.middleware import Middleware
 from starlette.middleware.sessions import SessionMiddleware
 from starlette_wtf import CSRFProtectMiddleware
 from tortoise.contrib.fastapi import register_tortoise
-
-# TODO: use dacite\starlette for config
-# TODO: implement login and use a bot token taken from the user object
-API_ID = 1078089
-API_HASH = 'b9b273130eb150b628f8c20f338bb8a4'
-BOT_TOKEN = '1749852619:AAHi0KZnbzy09FXKQ6TFhARH_zgsCXgTY0k'
-SECRET_KEY = 'asfjafhbas8f7ha8sfha87hsfasf'
+from app.dependencies.settings import get_settings
 
 config = Config('.env')  # read config from .env file
-bot = TelegramClient('bot', API_ID, API_HASH)
+settings = get_settings()
+bot = TelegramClient('bot', settings.API_ID, settings.API_HASH)
 app = FastAPI(
     middleware=[
-        Middleware(SessionMiddleware, secret_key=SECRET_KEY),
-        Middleware(CSRFProtectMiddleware, csrf_secret=SECRET_KEY)
+        Middleware(SessionMiddleware, secret_key=settings.SECRET_KEY),
+        Middleware(CSRFProtectMiddleware, csrf_secret=settings.SECRET_KEY)
     ]
 )
 
