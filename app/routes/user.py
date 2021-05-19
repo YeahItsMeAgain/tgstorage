@@ -13,20 +13,20 @@ from app.db.schemas.user import BasicUser
 # TODO: move this to frontend
 template = Template('''
 <html>
-  <body>
+	<body>
 	<h1>Connect Bot</h1>
 	<form method="post" novalidate>
 		{{ form.csrf_token }}
-	  <div>
+		<div>
 		{{ form.bot_token(placeholder='Bot token',
-					  autofocus='true') }}
+						autofocus='true') }}
 		{% if form.bot_token.errors -%}
 		<span>{{ form.bot_token.errors[0] }}</span>
 		{%- endif %}
-	  </div>
-	  <button type="submit">Connect Bot</button>
+		</div>
+		<button type="submit">Connect Bot</button>
 	</form>
-  </body>
+	</body>
 </html>
 ''')
 

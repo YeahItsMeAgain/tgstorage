@@ -1,10 +1,9 @@
-# https://gist.github.com/painor/7e74de80ae0c819d3e9abcf9989a8dd6
-
 # copied from https://github.com/tulir/mautrix-telegram/blob/master/mautrix_telegram/util/parallel_file_transfer.py
 # Copyright (C) 2021 Tulir Asokan
 import asyncio
 import hashlib
 import inspect
+import logging
 import math
 import os
 from collections import defaultdict
@@ -22,6 +21,12 @@ from telethon.tl.types import (Document, InputFileLocation, InputDocumentFileLoc
                                InputPhotoFileLocation, InputPeerPhotoFileLocation, TypeInputFile,
                                InputFileBig, InputFile)
 
+try:
+    from mautrix.crypto.attachments import async_encrypt_attachment
+except ImportError:
+    async_encrypt_attachment = None
+
+log: logging.Logger = logging.getLogger("telethon")
 
 TypeLocation = Union[Document, InputDocumentFileLocation, InputPeerPhotoFileLocation,
                      InputFileLocation, InputPhotoFileLocation]
@@ -70,8 +75,7 @@ class UploadSender:
         self.sender = sender
         self.part_count = part_count
         if big:
-            self.request = SaveBigFilePartRequest(
-                file_id, index, part_count, b"")
+            self.request = SaveBigFilePartRequest(file_id, index, part_count, b"")
         else:
             self.request = SaveFilePartRequest(file_id, index, b"")
         self.stride = stride
@@ -85,6 +89,8 @@ class UploadSender:
 
     async def _next(self, data: bytes) -> None:
         self.request.bytes = data
+        log.debug(f"Sending file part {self.request.file_part}/{self.part_count}"
+                  f" with {len(data)} bytes")
         await self.client._call(self.sender, self.request)
         self.request.file_part += self.stride
 
@@ -145,7 +151,8 @@ class ParallelTransferrer:
         ]
 
     async def _create_download_sender(self, file: TypeLocation, index: int, part_size: int,
-                                      stride: int, part_count: int) -> DownloadSender:
+                                      stride: int,
+                                      part_count: int) -> DownloadSender:
         return DownloadSender(self.client, await self._create_sender(), file, index * part_size, part_size,
                               stride, part_count)
 
@@ -160,8 +167,8 @@ class ParallelTransferrer:
 
     async def _create_upload_sender(self, file_id: int, part_count: int, big: bool, index: int,
                                     stride: int) -> UploadSender:
-        return UploadSender(self.client, await self._create_sender(), file_id, part_count, big, index,
-                            stride, loop=self.loop)
+        return UploadSender(self.client, await self._create_sender(), file_id, part_count, big, index, stride,
+                            loop=self.loop)
 
     async def _create_sender(self) -> MTProtoSender:
         dc = await self.client._get_dc(self.dc_id)
@@ -170,6 +177,7 @@ class ParallelTransferrer:
                                                      loggers=self.client._log,
                                                      proxy=self.client._proxy))
         if not self.auth_key:
+            log.debug(f"Exporting auth to DC {self.dc_id}")
             auth = await self.client(ExportAuthorizationRequest(self.dc_id))
             self.client._init_request.query = ImportAuthorizationRequest(id=auth.id,
                                                                          bytes=auth.bytes)
@@ -180,10 +188,8 @@ class ParallelTransferrer:
 
     async def init_upload(self, file_id: int, file_size: int, part_size_kb: Optional[float] = None,
                           connection_count: Optional[int] = None) -> Tuple[int, int, bool]:
-        connection_count = connection_count or self._get_connection_count(
-            file_size)
-        part_size = (
-            part_size_kb or utils.get_appropriated_part_size(file_size)) * 1024
+        connection_count = connection_count or self._get_connection_count(file_size)
+        part_size = (part_size_kb or utils.get_appropriated_part_size(file_size)) * 1024
         part_count = (file_size + part_size - 1) // part_size
         is_large = file_size > 10 * 1024 * 1024
         await self._init_upload(connection_count, file_id, part_count, is_large)
@@ -199,12 +205,11 @@ class ParallelTransferrer:
     async def download(self, file: TypeLocation, file_size: int,
                        part_size_kb: Optional[float] = None,
                        connection_count: Optional[int] = None) -> AsyncGenerator[bytes, None]:
-        connection_count = connection_count or self._get_connection_count(
-            file_size)
-        part_size = (
-            part_size_kb or utils.get_appropriated_part_size(file_size)) * 1024
+        connection_count = connection_count or self._get_connection_count(file_size)
+        part_size = (part_size_kb or utils.get_appropriated_part_size(file_size)) * 1024
         part_count = math.ceil(file_size / part_size)
-
+        log.debug("Starting parallel download: "
+                  f"{connection_count} {part_size} {part_count} {file!s}")
         await self._init_download(connection_count, file, part_count, part_size)
 
         part = 0
@@ -218,12 +223,13 @@ class ParallelTransferrer:
                     break
                 yield data
                 part += 1
+                log.debug(f"Part {part} downloaded")
 
+        log.debug("Parallel download finished, cleaning up connections")
         await self._cleanup()
 
 
-parallel_transfer_locks: DefaultDict[int, asyncio.Lock] = defaultdict(
-    lambda: asyncio.Lock())
+parallel_transfer_locks: DefaultDict[int, asyncio.Lock] = defaultdict(lambda: asyncio.Lock())
 
 
 def stream_file(file_to_stream: BinaryIO, chunk_size=1024):
