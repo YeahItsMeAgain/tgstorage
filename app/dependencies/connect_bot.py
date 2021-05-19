@@ -5,5 +5,5 @@ from app.settings import Settings
 
 async def connect_bot(settings: Settings = Depends(get_settings)):
     if not bot.is_connected():
-        await bot.start(settings.BOT_TOKEN)
+        await bot.start(bot_token=settings.BOT_TOKEN)
     return bot

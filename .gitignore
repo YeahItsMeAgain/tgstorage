@@ -168,4 +168,4 @@ frontend/
 forks/
 *.db
 *.env
-*.db.*
+*.db*
