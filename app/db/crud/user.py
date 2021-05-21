@@ -17,6 +17,11 @@ class UserDAL:
     async def get_or_create(user: schemas.User) -> schemas.CreateUser:
         db_user, _ = await models.User.get_or_create(**user.dict(exclude_unset=True))
         return await schemas.CreateUser.from_tortoise_orm(db_user)
+        
+    @staticmethod
+    async def get_or_none(user: schemas.User) -> schemas.CreateUser:
+        db_user, _ = await models.User.get_or_none(**user.dict(exclude_unset=True))
+        return await schemas.CreateUser.from_tortoise_orm(db_user)
 
     @staticmethod
     async def update(filter_args: dict, update_args: dict):
