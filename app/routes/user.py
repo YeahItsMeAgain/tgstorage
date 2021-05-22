@@ -41,6 +41,20 @@ router = APIRouter(
 class User:
     user: BasicUser = Depends(get_current_user)
 
+    @router.get('/setup')
+    async def setup(self, request: Request):
+        db_user = await UserDAL.get_or_none(
+            BasicUser(
+                name=self.user.name, email=self.user.email
+            )
+        )
+
+        if not db_user.bot_token:
+            return RedirectResponse(url=request.url_for(User.get_data.__name__))
+
+        return RedirectResponse(url='/')
+
+
     @router.api_route('/data', methods=['GET', 'POST'])
     @csrf_protect
     async def get_data(self, request: Request):
@@ -50,7 +64,7 @@ class User:
         # validate form
         if await form.validate_on_submit():
             await UserDAL.update({'email': self.user.email}, {'bot_token': form.bot_token.data})
-            return RedirectResponse(url='/', status_code=status.HTTP_301_MOVED_PERMANENTLY)
+            return RedirectResponse(url='/')
 
         # generate html
         html = template.render(form=form)

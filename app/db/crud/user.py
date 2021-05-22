@@ -20,7 +20,7 @@ class UserDAL:
 
     @staticmethod
     async def get_or_none(user: schemas.User) -> schemas.User:
-        db_user, _ = await models.User.get_or_none(**user.dict())
+        db_user = await models.User.get_or_none(**user.dict())
         return await schemas.User.from_tortoise_orm(db_user)
 
     @staticmethod

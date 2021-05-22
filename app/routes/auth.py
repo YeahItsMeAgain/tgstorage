@@ -7,9 +7,10 @@ from authlib.integrations.starlette_client import OAuthError
 from app import oauth
 from app.dependencies.auth import get_current_user_silent
 from app.db.schemas.user import BasicUser
-from app.routes.user import User
+from app.db.schemas.folder import CreateFolder
 from app.db import schemas
 from app.db.crud.user import UserDAL
+from app.db.crud.folder import FolderDAL
 
 router = APIRouter(
     prefix='/auth',
@@ -35,15 +36,17 @@ class Auth:
                 raise OAuthError
 
             db_user = await UserDAL.get_or_create(
-                schemas.CreateUser(
-                    username=user.name, email=user.email
+                schemas.BasicUser(
+                    name=user.name, email=user.email
                 )
             )
-            request.session['username'] = db_user.username
+            await FolderDAL.get_or_create(
+                CreateFolder(
+                    owner_id=db_user.id, is_root=True, name='/'
+                )
+            )
+            request.session['name'] = db_user.name
             request.session['email'] = db_user.email
-
-            if not db_user.bot_token:
-                return RedirectResponse(url=request.url_for(User.get_data.__name__))
 
             return RedirectResponse('/')
         except OAuthError:
@@ -60,6 +63,6 @@ class Auth:
 
     @router.get('/logout')
     async def logout(self, request: Request):
-        request.session.pop('username', None)
+        request.session.pop('name', None)
         request.session.pop('email', None)
         return RedirectResponse(url='/')
