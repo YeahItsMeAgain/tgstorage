@@ -6,10 +6,10 @@ from app.db.schemas.user import BasicUser
 
 
 def get_current_user(request: Request, silent=False) -> BasicUser:
-    username = request.session.get('username', None)
+    name = request.session.get('name', None)
     email = request.session.get('email', None)
 
-    if not username or not email:
+    if not name or not email:
         if silent:
             return None
 
@@ -18,7 +18,7 @@ def get_current_user(request: Request, silent=False) -> BasicUser:
             detail="login required",
         )
 
-    return BasicUser(username=username, email=email)
+    return BasicUser(name=name, email=email)
 
 
 def get_current_user_silent(request: Request) -> BasicUser:

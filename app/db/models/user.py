@@ -9,7 +9,7 @@ from .shared_resource import SharedResource
 
 class User(TimestampMixin, Model):
     id = fields.IntField(pk=True)
-    full_name = fields.CharField(max_length=255)
+    name = fields.CharField(max_length=255)
     email = fields.CharField(unique=True, max_length=320, index=True)
     bot_token = fields.CharField(null=True, max_length=120)
     chat_id = fields.IntField(null=True)
