@@ -2,12 +2,13 @@ from tortoise import fields
 from tortoise.models import Model
 
 from app.db.models.timestamp_mixin import TimestampMixin
+from app.db.models.abstract_model import AbstractModel
 from app.db import schemas
 from .folder import Folder
 from .file import File
 from .shared_resource import SharedResource
 
-class User(TimestampMixin, Model):
+class User(AbstractModel, TimestampMixin, Model):
     id = fields.IntField(pk=True)
     name = fields.CharField(max_length=255)
     email = fields.CharField(unique=True, max_length=320, index=True)
