@@ -11,8 +11,6 @@ from app.dependencies.connect_bot import connect_bot
 from app.fast_telethon import ParallelTransferrer
 from app import bot
 
-# TODO: use a robust logger, maybe loguru
-
 router = APIRouter(
     prefix='/files',
     tags=['files'],
