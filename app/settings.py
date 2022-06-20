@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     API_HASH: str
     BOT_TOKEN: str
     SECRET_KEY: str
+    SECRET_KEY2: str
 
     class Config:
         env_file = '.env'

@@ -17,7 +17,7 @@ bot = TelegramClient(RedisSession('bot', redis_connector), settings.API_ID, sett
 app = FastAPI(
     middleware=[
         Middleware(SessionMiddleware, secret_key=settings.SECRET_KEY),
-        Middleware(CSRFProtectMiddleware, csrf_secret=settings.SECRET_KEY)
+        Middleware(CSRFProtectMiddleware, csrf_secret=settings.SECRET_KEY2)
     ]
 )
 
