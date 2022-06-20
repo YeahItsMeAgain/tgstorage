@@ -29,7 +29,7 @@ class Auth:
 
         try:
             token = await oauth.google.authorize_access_token(request)
-            user = await oauth.google.parse_id_token(request, token)
+            user = token.get('userinfo')
 
             if not user.email or not user.email_verified:
                 raise OAuthError
