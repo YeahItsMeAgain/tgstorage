@@ -10,6 +10,7 @@ from app.db.schemas.user import BasicUser
 from app.db import models
 from app.db.crud.user import UserDAL
 from app.db.crud.folder import FolderDAL
+from app.routes.user import User
 
 router = APIRouter(
     prefix='/auth',
@@ -47,7 +48,7 @@ class Auth:
             request.session['name'] = db_user.name
             request.session['email'] = db_user.email
 
-            return RedirectResponse('/')
+            return RedirectResponse(request.url_for(User.setup.__name__))
         except OAuthError:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail='login failed')
@@ -57,8 +58,11 @@ class Auth:
         if self.user:
             return RedirectResponse(url='/')
 
-        redirect_uri = request.url_for(self.auth_via_google.__name__)
-        return await oauth.google.authorize_redirect(request, redirect_uri)
+        request.session.clear()
+        return await oauth.google.authorize_redirect(
+            request,
+            request.url_for(self.auth_via_google.__name__)
+        )
 
     @router.get('/logout')
     async def logout(self, request: Request):
