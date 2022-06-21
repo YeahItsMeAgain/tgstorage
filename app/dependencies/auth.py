@@ -5,7 +5,7 @@ from starlette import status
 from app.db.schemas.user import BasicUser
 
 
-def get_current_user(request: Request, silent=False) -> BasicUser:
+def _get_current_user(request: Request, silent) -> BasicUser:
     name = request.session.get('name', None)
     email = request.session.get('email', None)
 
@@ -21,5 +21,8 @@ def get_current_user(request: Request, silent=False) -> BasicUser:
     return BasicUser(name=name, email=email)
 
 
+def get_current_user(request: Request) -> BasicUser:
+    return _get_current_user(request, False)
+
 def get_current_user_silent(request: Request) -> BasicUser:
-    return get_current_user(request, True)
+    return _get_current_user(request, True)

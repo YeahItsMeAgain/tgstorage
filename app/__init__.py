@@ -7,13 +7,11 @@ from starlette.middleware.sessions import SessionMiddleware
 from starlette_wtf import CSRFProtectMiddleware
 from tortoise.contrib.fastapi import register_tortoise
 from app.dependencies.settings import get_settings
-from teleredis import RedisSession
 import redis
 
 config = Config('.env')  # read config from .env file
 settings = get_settings()
 redis_connector = redis.Redis(host='localhost', port=6379, db=0, decode_responses=False)
-bot = TelegramClient(RedisSession('bot', redis_connector), settings.API_ID, settings.API_HASH)
 app = FastAPI(
     middleware=[
         Middleware(SessionMiddleware, secret_key=settings.SECRET_KEY),

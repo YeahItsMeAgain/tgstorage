@@ -1,11 +1,10 @@
 from starlette_wtf import StarletteForm
-from telethon import TelegramClient
-from telethon.errors.rpcerrorlist import AccessTokenInvalidError
 from wtforms import StringField, ValidationError
 from wtforms.validators import DataRequired
-import uuid
+from telethon.errors.rpcerrorlist import AccessTokenInvalidError
 
 from app.dependencies.settings import get_settings
+from app.dependencies.connect_bot import connect_bot
 
 class GetUserBotTokenForm(StarletteForm):
     bot_token = StringField(
@@ -16,12 +15,8 @@ class GetUserBotTokenForm(StarletteForm):
     )
 
     async def async_validate_bot_token(self, bot_token, settings= get_settings()):
-        client = TelegramClient(str(uuid.uuid4()), settings.API_ID, settings.API_HASH)
         try:
-            await client.start(bot_token=bot_token.data)
-            await client.log_out()
-        except AccessTokenInvalidError:
-            raise ValidationError('invalid bot token!')
-        finally:
-            client.session.close()
-            client.session.delete()
+            self._request.session['bot_token'] = bot_token.data
+            await connect_bot(self._request, settings)
+        except AccessTokenInvalidError as exc:
+            raise ValidationError('invalid bot token!') from exc
