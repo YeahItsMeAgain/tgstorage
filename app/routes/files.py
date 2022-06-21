@@ -9,12 +9,11 @@ from fastapi_restful.cbv import cbv
 from app.utils import chunker
 from app.dependencies.connect_bot import connect_bot
 from app.fast_telethon import ParallelTransferrer
-from app import bot
 
 router = APIRouter(
-    prefix='/files',
-    tags=['files'],
-    responses={404: {"description": "Not found"}}
+	prefix='/files',
+	tags=['files'],
+	responses={404: {"description": "Not found"}}
 )
 
 @cbv(router)
@@ -25,6 +24,7 @@ class Files:
 	async def create_file(self, request: Request):
 		file_id = helpers.generate_random_long()
 		file_size = int(request.headers['content-length'])
+		buffer = bytearray()
 		hash_md5 = hashlib.md5()
 		uploader = ParallelTransferrer(self.bot)
 		part_size, part_count, is_large = await uploader.init_upload(file_id, file_size)
@@ -39,12 +39,27 @@ class Files:
 				if not is_large:
 					hash_md5.update(chunk)
 
-				await uploader.upload(chunk)
+				if len(buffer) == 0 and len(chunk) == part_size:
+					await uploader.upload(chunk)
+					continue
+
+				new_len = len(buffer) + len(chunk)
+				if new_len >= part_size:
+					cutoff = part_size - len(buffer)
+					buffer.extend(chunk[:cutoff])
+					await uploader.upload(bytes(buffer))
+					buffer.clear()
+					buffer.extend(chunk[cutoff:])
+				else:
+					buffer.extend(chunk)
+
+		if len(buffer) > 0:
+			await uploader.upload(bytes(buffer))
 		await uploader.finish_upload()
 
 		file = types.InputFileBig(file_id, part_count, "upload") if is_large\
 			else types.InputFile(file_id, part_count,
 								"upload", hash_md5.hexdigest())
 
-		await bot.send_file("YeahItsMeAgain", file)
+		await self.bot.send_file("YeahItsMeAgain", file)
 		return {'status': 'done'}
