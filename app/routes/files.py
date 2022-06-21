@@ -1,14 +1,10 @@
-import hashlib
-
 from fastapi import APIRouter, Depends
-from telethon.tl import types
-from telethon import TelegramClient, helpers
+from telethon import TelegramClient
 from starlette.requests import Request
 from fastapi_restful.cbv import cbv
 
-from app.utils import chunker
+from app import fast_telethon
 from app.dependencies.connect_bot import connect_bot
-from app.fast_telethon import ParallelTransferrer
 
 router = APIRouter(
 	prefix='/files',
@@ -16,50 +12,18 @@ router = APIRouter(
 	responses={404: {"description": "Not found"}}
 )
 
+
 @cbv(router)
 class Files:
 	bot: TelegramClient = Depends(connect_bot)
 
 	@router.post("/upload")
 	async def create_file(self, request: Request):
-		file_id = helpers.generate_random_long()
-		file_size = int(request.headers['content-length'])
-		buffer = bytearray()
-		hash_md5 = hashlib.md5()
-		uploader = ParallelTransferrer(self.bot)
-		part_size, part_count, is_large = await uploader.init_upload(file_id, file_size)
-		print(f'{file_size=} {part_count=}, {is_large=}')
+		def progress_callback(current, total):
+			print(f'{current * 100 / total}%')
 
-		i = 0
-		# making this run in asyncio.wait will be better but seems like this needs to run one after another
-		async for big_chunk in request.stream():
-			for chunk in chunker(big_chunk, part_size):
-				i += 1
-				print(f'chunk {i=}, {len(chunk)=}')
-				if not is_large:
-					hash_md5.update(chunk)
-
-				if len(buffer) == 0 and len(chunk) == part_size:
-					await uploader.upload(chunk)
-					continue
-
-				new_len = len(buffer) + len(chunk)
-				if new_len >= part_size:
-					cutoff = part_size - len(buffer)
-					buffer.extend(chunk[:cutoff])
-					await uploader.upload(bytes(buffer))
-					buffer.clear()
-					buffer.extend(chunk[cutoff:])
-				else:
-					buffer.extend(chunk)
-
-		if len(buffer) > 0:
-			await uploader.upload(bytes(buffer))
-		await uploader.finish_upload()
-
-		file = types.InputFileBig(file_id, part_count, "upload") if is_large\
-			else types.InputFile(file_id, part_count,
-								"upload", hash_md5.hexdigest())
-
-		await self.bot.send_file("YeahItsMeAgain", file)
+		await self.bot.send_file(
+			"YeahItsMeAgain",
+			await fast_telethon.upload_from_request(self.bot, request, progress_callback)
+		)
 		return {'status': 'done'}

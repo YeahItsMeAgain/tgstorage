@@ -1,3 +1,4 @@
+# copied from https://gist.github.com/painor/7e74de80ae0c819d3e9abcf9989a8dd6 && changed by me to handle upload from request.
 # copied from https://github.com/tulir/mautrix-telegram/blob/master/mautrix_telegram/util/parallel_file_transfer.py
 # Copyright (C) 2021 Tulir Asokan
 import asyncio
@@ -8,6 +9,7 @@ import math
 import os
 from collections import defaultdict
 from typing import Optional, List, AsyncGenerator, Union, Awaitable, DefaultDict, Tuple, BinaryIO
+from fastapi import Request
 
 from telethon import utils, helpers, TelegramClient
 from telethon.crypto import AuthKey
@@ -20,6 +22,8 @@ from telethon.tl.functions.upload import (GetFileRequest, SaveFilePartRequest,
 from telethon.tl.types import (Document, InputFileLocation, InputDocumentFileLocation,
                                InputPhotoFileLocation, InputPeerPhotoFileLocation, TypeInputFile,
                                InputFileBig, InputFile)
+
+from app.utils import chunker
 
 try:
     from mautrix.crypto.attachments import async_encrypt_attachment
@@ -306,3 +310,47 @@ async def upload_file(client: TelegramClient,
                       ) -> TypeInputFile:
     res = (await _internal_transfer_to_telegram(client, file, progress_callback))[0]
     return res
+
+
+async def upload_from_request(client: TelegramClient,
+                              request: Request,
+                              progress_callback: callable
+                              ) -> Tuple[TypeInputFile, int]:
+    uploaded = 0
+    buffer = bytearray()
+    hash_md5 = hashlib.md5()
+    uploader = ParallelTransferrer(client)
+    file_id = helpers.generate_random_long()
+    file_size = int(request.headers['content-length'])
+    part_size, part_count, is_large = await uploader.init_upload(file_id, file_size)
+    print(f'{file_size=} {part_count=}, {is_large=}')
+
+    async for big_chunk in request.stream():
+        for data in chunker(big_chunk, part_size):
+            if progress_callback:
+                r = progress_callback(uploaded, file_size)
+                if inspect.isawaitable(r):
+                    await r
+            if not is_large:
+                hash_md5.update(data)
+            if len(buffer) == 0 and len(data) == part_size:
+                await uploader.upload(data)
+                continue
+            new_len = len(buffer) + len(data)
+            if new_len >= part_size:
+                cutoff = part_size - len(buffer)
+                buffer.extend(data[:cutoff])
+                uploaded += len(buffer)
+                await uploader.upload(bytes(buffer))
+                buffer.clear()
+                buffer.extend(data[cutoff:])
+            else:
+                buffer.extend(data)
+
+    if len(buffer) > 0:
+        await uploader.upload(bytes(buffer))
+    await uploader.finish_upload()
+    if is_large:
+        return InputFileBig(file_id, part_count, "upload")
+    else:
+        return InputFile(file_id, part_count, "upload", hash_md5.hexdigest())
