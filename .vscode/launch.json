@@ -9,13 +9,9 @@
             "type": "python",
             "request": "launch",
             "module": "uvicorn",
-            "env": {
-                // "FLASK_APP": "app.py",
-                // "FLASK_ENV": "development",
-                // "FLASK_DEBUG": "0"
-            },
+            "env": {},
             "args": [
-                "app:app"
+                "app:app", "--reload", "--reload-dir=app"
             ],
         }
     ]
