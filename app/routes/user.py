@@ -52,6 +52,8 @@ class User:
 
         if not db_user.bot_token:
             return RedirectResponse(url=request.url_for(User.get_data.__name__))
+        else:
+            request.session['bot_token'] = db_user.bot_token
 
         return RedirectResponse(url='/')
 
