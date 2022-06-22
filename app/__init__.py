@@ -3,20 +3,35 @@ from fastapi import FastAPI
 from authlib.integrations.starlette_client import OAuth
 from starlette.config import Config
 from starlette.middleware import Middleware
-from starlette.middleware.sessions import SessionMiddleware
+from starlette_session import SessionMiddleware
+from starlette_session.backends import BackendType
 from starlette_wtf import CSRFProtectMiddleware
 from tortoise.contrib.fastapi import register_tortoise
 
+from app.db import TORTOISE_ORM
 from app.dependencies.settings import get_settings
 
 config = Config('.env')  # read config from .env file
 settings = get_settings()
-redis_connector = redis.Redis(host='localhost', port=6379, db=0, decode_responses=False)
+
+redis_connector = redis.Redis(
+    host='localhost', port=6379, db=0, decode_responses=False
+)
 redis_connector.ping()
+
 app = FastAPI(
     middleware=[
-        Middleware(SessionMiddleware, secret_key=settings.SECRET_KEY),
-        Middleware(CSRFProtectMiddleware, csrf_secret=settings.SECRET_KEY2)
+        Middleware(
+            SessionMiddleware,
+            secret_key=settings.SECRET_KEY,
+            cookie_name='session',
+            backend_type=BackendType.redis,
+            backend_client=redis_connector
+        ),
+        Middleware(
+            CSRFProtectMiddleware,
+            csrf_secret=settings.SECRET_KEY2
+        )
     ]
 )
 
@@ -29,10 +44,8 @@ oauth.register(
     }
 )
 
-from app.events import exceptions_handlers
 from app.routes import routers
-from app.db import TORTOISE_ORM
-
+from app.events import exceptions_handlers
 register_tortoise(
     app,
     config=TORTOISE_ORM,
