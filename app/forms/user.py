@@ -19,4 +19,5 @@ class GetUserBotTokenForm(StarletteForm):
             self._request.session['bot_token'] = bot_token.data
             await connect_bot(self._request, settings)
         except AccessTokenInvalidError as exc:
+            del self._request.session['bot_token']
             raise ValidationError('invalid bot token!') from exc

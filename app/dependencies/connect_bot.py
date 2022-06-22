@@ -14,11 +14,6 @@ async def connect_bot(request: Request, settings: Settings = Depends(get_setting
 
     session_name = f'{request.session["email"]}_{bot_token}'
     bot = TelegramClient(RedisSession(session_name, redis_connector), settings.API_ID, settings.API_HASH)
-
-    try:
-        if not bot.is_connected():
-            await bot.start(bot_token=bot_token)
-    except AccessTokenInvalidError:
-        del request.session['bot_token']
-        raise
+    if not bot.is_connected():
+        await bot.start(bot_token=bot_token)
     return bot
