@@ -1,17 +1,18 @@
+import redis
 from fastapi import FastAPI
-from telethon import TelegramClient
 from authlib.integrations.starlette_client import OAuth
 from starlette.config import Config
 from starlette.middleware import Middleware
 from starlette.middleware.sessions import SessionMiddleware
 from starlette_wtf import CSRFProtectMiddleware
 from tortoise.contrib.fastapi import register_tortoise
+
 from app.dependencies.settings import get_settings
-import redis
 
 config = Config('.env')  # read config from .env file
 settings = get_settings()
 redis_connector = redis.Redis(host='localhost', port=6379, db=0, decode_responses=False)
+redis_connector.ping()
 app = FastAPI(
     middleware=[
         Middleware(SessionMiddleware, secret_key=settings.SECRET_KEY),
