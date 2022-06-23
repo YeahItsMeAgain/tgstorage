@@ -13,7 +13,7 @@ class User(AbstractModel, TimestampMixin, Model):
     name = fields.CharField(max_length=255)
     email = fields.CharField(unique=True, max_length=320, index=True)
     bot_token = fields.CharField(null=True, max_length=120)
-    chat_id = fields.IntField(null=True)
+    chat_id = fields.BigIntField(null=True)
     is_active = fields.BooleanField(default=True)
 
     folders: fields.ReverseRelation['Folder']

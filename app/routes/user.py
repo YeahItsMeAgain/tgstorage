@@ -7,7 +7,7 @@ from jinja2 import Template
 
 from app.dependencies.auth import get_current_user
 from app.db.crud.user import UserDAL
-from app.forms.user import GetUserBotTokenForm
+from app.forms.user import GetUserBotForm
 from app.db.schemas.user import BasicUser
 from app.db import models
 
@@ -23,6 +23,10 @@ template = Template('''
 						autofocus='true') }}
 		{% if form.bot_token.errors -%}
 		<span>{{ form.bot_token.errors[0] }}</span>
+		{%- endif %}
+		{{ form.chat_id(placeholder='Chat id') }}
+		{% if form.chat_id.errors -%}
+		<span>{{ form.chat_id.errors[0] }}</span>
 		{%- endif %}
 		</div>
 		<button type="submit">Connect Bot</button>
@@ -57,16 +61,21 @@ class User:
 
         return RedirectResponse(url='/')
 
-
     @router.api_route('/data', methods=['GET', 'POST'])
     @csrf_protect
     async def get_data(self, request: Request):
         # initialize form
-        form = await GetUserBotTokenForm.from_formdata(request)
+        form = await GetUserBotForm.from_formdata(request)
 
         # validate form
         if await form.validate_on_submit():
-            await UserDAL.update({'email': self.user.email}, {'bot_token': form.bot_token.data})
+            await UserDAL.update(
+                {'email': self.user.email},
+                {
+                    'bot_token': form.bot_token.data,
+                    'chat_id': form.chat_id.data
+                }
+            )
             return RedirectResponse(url='/')
 
         # generate html
