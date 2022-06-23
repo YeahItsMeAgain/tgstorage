@@ -9,7 +9,6 @@ from app.dependencies.auth import get_current_user
 from app.db.crud.user import UserDAL
 from app.forms.user import GetUserBotForm
 from app.db.schemas.user import BasicUser
-from app.db import models
 
 # TODO: move this to frontend
 template = Template('''
@@ -49,7 +48,7 @@ class User:
     @router.get('/setup')
     async def setup(self, request: Request):
         db_user = await UserDAL.get_or_none(
-            models.User(
+            BasicUser(
                 name=self.user.name, email=self.user.email
             )
         )

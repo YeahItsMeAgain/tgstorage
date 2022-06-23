@@ -1,10 +1,9 @@
 from tortoise import fields
 
 from app.db.models.abstract_resource import AbstractResource
-from app.db.models.abstract_model import AbstractModel
 from .file import File
 
-class Folder(AbstractResource, AbstractModel):
+class Folder(AbstractResource):
     owner = fields.ForeignKeyField('models.User', related_name='folders')
     parent = fields.ForeignKeyField('models.Folder', related_name='sub_folders', null=True)
     is_root = fields.BooleanField(default=False)

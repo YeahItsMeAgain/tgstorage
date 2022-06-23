@@ -13,6 +13,7 @@
             "args": [
                 "app:app", "--reload", "--reload-dir=app"
             ],
+            "justMyCode": false
         }
     ]
 }

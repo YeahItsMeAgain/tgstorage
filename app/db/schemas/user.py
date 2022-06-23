@@ -1,4 +1,6 @@
 import pydantic
+from typing import Union
+
 from tortoise.contrib.pydantic import pydantic_model_creator
 from app.db.models import User as UserModel
 
@@ -8,3 +10,4 @@ BasicUser = pydantic_model_creator(
     include=['name', 'email'],
 )
 BasicUser.Config.extra = pydantic.main.Extra.ignore
+UserType = Union[BasicUser, User]

@@ -1,13 +1,12 @@
 from enum import Enum
-from tortoise import fields, models
-
-from app.db.models.abstract_model import AbstractModel
+from tortoise import fields
+from tortoise.models import Model
 
 class SharedResourcePermission(str, Enum):
     view = 'view'
     edit = 'edit'
 
-class SharedResource(AbstractModel, models.Model):
+class SharedResource(Model):
     id = fields.IntField(pk=True)
     file = fields.ForeignKeyField('models.File', related_name='shares', null=True)
     folder = fields.ForeignKeyField('models.Folder', related_name='shares', null=True)

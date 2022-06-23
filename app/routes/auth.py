@@ -7,7 +7,7 @@ from authlib.integrations.starlette_client import OAuthError
 from app import oauth
 from app.dependencies.auth import get_current_user_silent
 from app.db.schemas.user import BasicUser
-from app.db import models
+from app.db import schemas
 from app.db.crud.user import UserDAL
 from app.db.crud.folder import FolderDAL
 from app.routes.user import User
@@ -36,12 +36,12 @@ class Auth:
                 raise OAuthError
 
             db_user = await UserDAL.get_or_create(
-                models.User(
+                schemas.BasicUser(
                     name=user.name, email=user.email
                 )
             )
             await FolderDAL.get_or_create(
-                models.Folder(
+                schemas.CreateFolder(
                     owner_id=db_user.id, is_root=True, name='/'
                 )
             )
