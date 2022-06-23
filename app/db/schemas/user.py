@@ -1,5 +1,6 @@
-import pydantic
 from typing import Union
+
+import pydantic
 
 from tortoise.contrib.pydantic import pydantic_model_creator
 from app.db.models import User as UserModel

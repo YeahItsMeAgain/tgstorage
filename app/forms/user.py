@@ -26,10 +26,10 @@ class GetUserBotForm(StarletteForm):
             self._request.session['bot_token'] = bot_token.data
             await connect_bot(self._request, settings)
         except AccessTokenInvalidError as exc:
-            del self._request.session['bot_token']
+            self._request.session.pop('bot_token', None)
             raise ValidationError('invalid bot token!') from exc
-        except:
-            raise ValidationError('Can\'t connect bot!')
+        except Exception as exc:
+            raise ValidationError('Can\'t connect bot!') from exc
 
     
     async def async_validate_chat_id(self, chat_id, settings= get_settings()):
@@ -42,7 +42,7 @@ class GetUserBotForm(StarletteForm):
             raise ValidationError('Can\'t find the chat!')
         except ChatAdminRequiredError:
             raise ValidationError('Add permission for sending messages!')
-        except:
-            raise ValidationError('Can\'t connect to chat!')
+        except Exception as exc:
+            raise ValidationError('Can\'t connect to chat!') from exc
 
 
