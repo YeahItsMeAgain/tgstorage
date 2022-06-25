@@ -53,10 +53,11 @@ class User:
             )
         )
 
-        if not db_user.bot_token:
+        if not db_user.bot_token or not db_user.chat_id:
             return RedirectResponse(url=request.url_for(User.get_data.__name__))
         else:
             request.session['bot_token'] = db_user.bot_token
+            request.session['chat_id'] = db_user.chat_id
 
         return RedirectResponse(url='/')
 

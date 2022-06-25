@@ -38,6 +38,7 @@ class GetUserBotForm(StarletteForm):
 
         try:
             await bot.send_message(chat_id.data, 'Connected!')
+            self._request.session['chat_id'] = chat_id.data
         except ValueError:
             raise ValidationError('Can\'t find the chat!')
         except ChatAdminRequiredError:
