@@ -17,7 +17,7 @@ class User(TimestampMixin, Model):
 
     folders: fields.ReverseRelation['Folder']
     files: fields.ReverseRelation['File']
-    shared_resources: fields.ReverseRelation['SharedResource']
+    shares: fields.ReverseRelation['SharedResource']
 
     async def root_folder(self):
         db_folder = await Folder.get_or_none(owner=self.id, is_root=True)
