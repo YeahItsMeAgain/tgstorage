@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     API_HASH: str
     SECRET_KEY: str
     SECRET_KEY2: str
+    ALLOWED_MAILS: list
 
     class Config:
         env_file = '.env'

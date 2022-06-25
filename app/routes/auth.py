@@ -10,7 +10,9 @@ from app.db.schemas.user import BasicUser
 from app.db import schemas
 from app.db.crud.user import UserDAL
 from app.db.crud.folder import FolderDAL
+from app.dependencies.settings import get_settings
 from app.routes.user import User
+from app.settings import Settings
 
 router = APIRouter(
     prefix='/auth',
@@ -22,6 +24,7 @@ router = APIRouter(
 @cbv(router)
 class Auth:
     user: BasicUser = Depends(get_current_user_silent)
+    settings: Settings = Depends(get_settings)
 
     @router.get('/google')
     async def auth_via_google(self, request: Request):
@@ -32,7 +35,8 @@ class Auth:
             token = await oauth.google.authorize_access_token(request)
             user = token.get('userinfo')
 
-            if not user.email or not user.email_verified:
+            if not user.email or not user.email_verified or \
+                    (len(self.settings.ALLOWED_MAILS) and user.email not in self.settings.ALLOWED_MAILS):
                 raise OAuthError
 
             db_user = await UserDAL.get_or_create(
