@@ -8,7 +8,7 @@ from jinja2 import Template
 from app.dependencies.auth import get_current_user
 from app.db.crud.user import UserDAL
 from app.forms.user import GetUserBotForm
-from app.db.schemas.user import BasicUser
+from app.db.schemas.user import SessionUser
 
 # TODO: move this to frontend
 template = Template('''
@@ -43,15 +43,11 @@ router = APIRouter(
 
 @cbv(router)
 class User:
-    user: BasicUser = Depends(get_current_user)
+    user: SessionUser = Depends(get_current_user)
 
     @router.get('/setup')
     async def setup(self, request: Request):
-        db_user = await UserDAL.get_or_none(
-            BasicUser(
-                name=self.user.name, email=self.user.email
-            )
-        )
+        db_user = await UserDAL.get_or_none(self.user)
 
         if not db_user.bot_token or not db_user.chat_id:
             return RedirectResponse(url=request.url_for(User.get_data.__name__))
@@ -76,6 +72,8 @@ class User:
                     'chat_id': form.chat_id.data
                 }
             )
+            request.session['bot_token'] = form.bot_token.data
+            request.session['chat_id'] = form.chat_id.data
             return RedirectResponse(url='/')
 
         # generate html

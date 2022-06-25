@@ -6,12 +6,12 @@ from authlib.integrations.starlette_client import OAuthError
 
 from app import oauth
 from app.dependencies.auth import get_current_user_silent
-from app.db.schemas.user import BasicUser
+from app.db.schemas.user import SessionUser
 from app.db import schemas
 from app.db.crud.user import UserDAL
 from app.db.crud.folder import FolderDAL
 from app.dependencies.settings import get_settings
-from app.routes.user import User
+from app.routes.user import User as UserRouter
 from app.settings import Settings
 
 router = APIRouter(
@@ -23,7 +23,7 @@ router = APIRouter(
 
 @cbv(router)
 class Auth:
-    user: BasicUser = Depends(get_current_user_silent)
+    user: SessionUser = Depends(get_current_user_silent)
     settings: Settings = Depends(get_settings)
 
     @router.get('/google')
@@ -40,19 +40,20 @@ class Auth:
                 raise OAuthError
 
             db_user = await UserDAL.get_or_create(
-                schemas.BasicUser(
+                schemas.CreateUser(
                     name=user.name, email=user.email
                 )
             )
             await FolderDAL.get_or_create(
                 schemas.CreateFolder(
-                    owner_id=db_user.id, is_root=True, name='/'
+                    owner_id=db_user.id, is_root=True, name='root'
                 )
             )
+            request.session['id'] = db_user.id
             request.session['name'] = db_user.name
             request.session['email'] = db_user.email
 
-            return RedirectResponse(request.url_for(User.setup.__name__))
+            return RedirectResponse(request.url_for(UserRouter.setup.__name__))
         except OAuthError:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail='login failed')

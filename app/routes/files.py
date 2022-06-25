@@ -4,7 +4,7 @@ from starlette.requests import Request
 from fastapi_restful.cbv import cbv
 
 from app import fast_telethon
-from app.db.schemas.user import BasicUser
+from app.db.schemas.user import SessionUser
 from app.dependencies.auth import get_current_user
 from app.dependencies.connect_bot import connect_bot
 
@@ -18,7 +18,7 @@ router = APIRouter(
 @cbv(router)
 class Files:
 	bot: TelegramClient = Depends(connect_bot)
-	user: BasicUser = Depends(get_current_user)
+	user: SessionUser = Depends(get_current_user)
 
 	@router.post("/upload")
 	async def create_file(self, request: Request):
