@@ -6,6 +6,7 @@ from fastapi_restful.cbv import cbv
 from app import fast_telethon
 from app.db.schemas.user import SessionUser
 from app.dependencies.auth import get_current_user
+from app.dependencies.chat import get_current_chat
 from app.dependencies.connect_bot import connect_bot
 
 router = APIRouter(
@@ -18,6 +19,7 @@ router = APIRouter(
 @cbv(router)
 class Files:
 	bot: TelegramClient = Depends(connect_bot)
+	chat: int = Depends(get_current_chat)
 	user: SessionUser = Depends(get_current_user)
 
 	@router.post("/upload")
@@ -26,7 +28,7 @@ class Files:
 			print(f'{current * 100 / total}%')
 
 		await self.bot.send_file(
-			self.user.chat_id,
+			self.chat,
 			await fast_telethon.upload_from_request(self.bot, request, progress_callback)
 		)
 		return {'status': 'done'}

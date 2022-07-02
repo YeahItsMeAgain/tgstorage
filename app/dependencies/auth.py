@@ -9,7 +9,6 @@ def _get_current_user(request: Request, silent) -> SessionUser:
     id = request.session.get('id', None)
     name = request.session.get('name', None)
     email = request.session.get('email', None)
-    chat_id = request.session.get('chat_id', None)
 
     if not id or not name or not email:
         if silent:
@@ -20,7 +19,7 @@ def _get_current_user(request: Request, silent) -> SessionUser:
             detail="login required",
         )
 
-    return SessionUser(id=id, name=name, email=email, chat_id=chat_id)
+    return SessionUser(id=id, name=name, email=email)
 
 
 def get_current_user(request: Request) -> SessionUser:

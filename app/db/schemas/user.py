@@ -15,7 +15,7 @@ CreateUser = pydantic_model_creator(
 
 SessionUser = pydantic_model_creator(
     UserModel, name=f'Session{UserModel.__name__}',
-    include=['id', 'name', 'email', 'chat_id']
+    include=['id', 'name', 'email']
 )
 CreateUser.Config.extra = pydantic.main.Extra.ignore
 UserType = Union[CreateUser, User, SessionUser]

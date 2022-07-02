@@ -7,7 +7,8 @@ Folder = pydantic_model_creator(
 )
 
 CreateFolder = pydantic_model_creator(
-    FolderModel, name=f'Create{FolderModel.__name__}', include=['owner_id', 'is_root', 'name']
+    FolderModel, name=f'Create{FolderModel.__name__}',
+    include=['parent_id', 'owner_id', 'is_root', 'name']
 )
 
 FolderType = Union[Folder, CreateFolder]
