@@ -302,6 +302,17 @@ async def download_file(client: TelegramClient,
 
     return out
 
+async def iter_download(client: TelegramClient,
+                        location: TypeLocation
+                        ) -> BinaryIO:
+    size = location.size
+    dc_id, location = utils.get_input_location(location)
+    # We lock the transfers because telegram has connection count limits
+    downloader = ParallelTransferrer(client, dc_id)
+    downloaded = downloader.download(location, size)
+    async for x in downloaded:
+        yield x
+
 
 async def upload_file(client: TelegramClient,
                       file: BinaryIO,
@@ -314,6 +325,7 @@ async def upload_file(client: TelegramClient,
 
 async def upload_from_request(client: TelegramClient,
                               request: Request,
+                              file_name: str,
                               progress_callback: callable
                               ) -> Tuple[TypeInputFile, int]:
     uploaded = 0
@@ -351,6 +363,6 @@ async def upload_from_request(client: TelegramClient,
         await uploader.upload(bytes(buffer))
     await uploader.finish_upload()
     if is_large:
-        return InputFileBig(file_id, part_count, "upload")
+        return InputFileBig(file_id, part_count, file_name)
     else:
-        return InputFile(file_id, part_count, "upload", hash_md5.hexdigest())
+        return InputFile(file_id, part_count, file_name, hash_md5.hexdigest())

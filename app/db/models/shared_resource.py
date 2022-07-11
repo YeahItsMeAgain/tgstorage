@@ -15,3 +15,5 @@ class SharedResource(Model):
 
     class Meta:
         table: str = 'shared_resources'
+
+    # TODO: pydanticMeta exclude
