@@ -2,9 +2,8 @@ from app.db import models, schemas
 
 class UserDAL:
     @staticmethod
-    async def get_or_create(user: schemas.UserType) -> schemas.User:
-        db_user, _ = await models.User.get_or_create(**user.dict())
-        return await schemas.User.from_tortoise_orm(db_user)
+    async def get_db_or_create(user: schemas.UserType) -> models.User:
+        return await models.User.get_or_create(**user.dict())
 
     @staticmethod
     async def get_db_model_or_none(user: schemas.UserType) -> models.User:

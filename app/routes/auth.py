@@ -39,7 +39,7 @@ class Auth:
                     (len(self.settings.ALLOWED_MAILS) and user.email not in self.settings.ALLOWED_MAILS):
                 raise OAuthError
 
-            db_user = await UserDAL.get_or_create(
+            db_user = await UserDAL.get_db_or_create(
                 schemas.CreateUser(
                     name=user.name, email=user.email
                 )

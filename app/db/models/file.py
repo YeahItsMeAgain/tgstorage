@@ -10,9 +10,3 @@ class File(AbstractResource):
 
     class Meta:
         table: str = 'files'
-
-    class PydanticMeta:
-        exclude = [
-            'owner', 'folder.parent',
-            'folder.sub_folders'
-        ]

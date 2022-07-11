@@ -19,8 +19,4 @@ class Folder(AbstractResource):
 
     class PydanticMeta:
         allow_cycles = True
-        exclude = [
-            'owner', 'sub_folders.parent',
-            'files.owner', 'files.folder'
-        ]
         max_recursion = 2
