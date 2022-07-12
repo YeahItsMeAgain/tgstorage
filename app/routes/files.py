@@ -53,7 +53,7 @@ class Files:
 		def progress_callback(current, total):
 			print(f'{current * 100 / total}%')
 
-		folder = await FolderDAL.get_db_model_or_none(self.user.id, folder_uuid)
+		folder = await FolderDAL.get_db_model_or_none(owner=self.user.id, uuid=folder_uuid)
 		if not folder:
 			raise HTTPException(
 				status_code=status.HTTP_400_BAD_REQUEST,
@@ -70,7 +70,8 @@ class Files:
 			self.chat,
 			await fast_telethon.upload_from_request(self.bot, request, file_name, progress_callback)
 		)
-		return await FileDAL.get_or_create(schemas.CreateFile(
+
+		await FileDAL.get_db_or_create(schemas.CreateFile(
 			name=file_name,
 			owner_id=self.user.id,
 			folder_id=folder.id,
@@ -79,7 +80,7 @@ class Files:
 
 	@router.get("/download/{uuid}")
 	async def download_file(self, uuid: str):
-		file = await FileDAL.get_db_model_or_none(self.user.id, uuid)
+		file = await FileDAL.get_db_model_or_none(owner=self.user.id, uuid=uuid)
 		if not file:
 			raise HTTPException(
 				status_code=status.HTTP_400_BAD_REQUEST,

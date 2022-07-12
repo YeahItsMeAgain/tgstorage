@@ -20,3 +20,6 @@ class Folder(AbstractResource):
     class PydanticMeta:
         allow_cycles = True
         max_recursion = 2
+        exclude = ['id']
+        include = ['name', 'is_public', 'created_at', 'modified_at', 'uuid']
+        optional = ['created_at', 'modified_at', 'uuid']

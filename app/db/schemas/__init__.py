@@ -2,19 +2,22 @@
 from tortoise import Tortoise
 Tortoise.init_models(["app.db.models"], "models")
  
-from .user import CreateUser, SessionUser, User, UserType
-from .folder import CreateFolder, Folder, FolderType
-from .file import CreateFile, File, FileType
+from .user import CreateUser, SessionUser, UserType
+from .folder import ViewFolder, CreateFolder, FolderType
+from .file import ViewFile, CreateFile, FileType
+from .share import ViewShare, CreateShare, ShareType
 
 __all__ = [
     'UserType',
     'FolderType',
     'FileType',
+    'ShareType',
     CreateUser.__name__,
     SessionUser.__name__,
-    User.__name__,
-    Folder.__name__,
+    ViewFolder.__name__,
     CreateFolder.__name__,
-    File.__name__,
+    ViewFile.__name__,
     CreateFile.__name__,
+    ViewShare.__name__,
+    CreateShare.__name__,
 ]

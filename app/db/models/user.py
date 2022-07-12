@@ -21,10 +21,11 @@ class User(TimestampMixin, Model):
 
     async def root_folder(self):
         db_folder = await Folder.get_or_none(owner=self.id, is_root=True)
-        return await schemas.Folder.from_tortoise_orm(db_folder)
+        return await schemas.ViewFolder.from_tortoise_orm(db_folder)
 
     class Meta:
         table: str = 'users'
 
     class PydanticMeta:
         computed = ["root_folder"]
+        include = ['name', 'email']

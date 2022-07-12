@@ -44,7 +44,7 @@ class Auth:
                     name=user.name, email=user.email
                 )
             )
-            await FolderDAL.get_or_create(
+            await FolderDAL.get_db_or_create(
                 schemas.CreateFolder(
                     owner_id=db_user.id, is_root=True, name='root'
                 )
