@@ -3,7 +3,8 @@ from app.db import models, schemas
 class UserDAL:
     @staticmethod
     async def get_db_or_create(user: schemas.UserType) -> models.User:
-        return await models.User.get_or_create(**user.dict())
+        db_user, _  = await models.User.get_or_create(**user.dict())
+        return db_user
 
     @staticmethod
     async def get_db_model_or_none(user: schemas.UserType) -> models.User:
