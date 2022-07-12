@@ -28,9 +28,9 @@ class ShareDAL:
 				]
 			)
 			await asyncio.gather(*[
-                share_folder_tree_inner(sub_folder)
-                for sub_folder in await db_folder.sub_folders.all()
-            ])
+				share_folder_tree_inner(sub_folder)
+				for sub_folder in await db_folder.sub_folders.all()
+			])
 
 		await share_folder_tree_inner(db_folder)
 		return shares
@@ -56,13 +56,23 @@ class ShareDAL:
 		).delete()
 
 	@staticmethod
+	async def share_file(db_file: models.File, shared_user_email: str):
+		await models.SharedResource.get_or_create(
+			owner_id=db_file.owner_id,
+			file_id=db_file.id,
+			shared_user_email=shared_user_email
+		)
+
+	@staticmethod
+	async def unshare_file(db_file: models.File, shared_user_email: str):
+		await models.SharedResource.filter(
+			owner_id=db_file.owner_id,
+			file_id=db_file.id,
+			shared_user_email=shared_user_email
+		).delete()
+
+	@staticmethod
 	async def get_by_filter(**kwargs):
 		return await schemas.ViewShare.from_queryset(
 			models.SharedResource.filter(**kwargs).all()
 		)
-
-	@staticmethod
-	async def delete(owner: int, shared_user_email: str, **kwargs):
-		return await models.SharedResource.filter(
-			owner=owner, shared_user_email=shared_user_email, **kwargs
-		).delete()

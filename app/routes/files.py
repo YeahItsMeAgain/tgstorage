@@ -1,3 +1,4 @@
+from typing import Union
 from starlette import status
 from fastapi import APIRouter, Depends, HTTPException
 from telethon import TelegramClient
@@ -8,10 +9,11 @@ from fastapi.responses import StreamingResponse
 from app import fast_telethon
 from app.db import schemas
 from app.db.crud.file import FileDAL
-from app.db.crud.folder import FolderDAL
-from app.dependencies.auth import get_current_user
+from app.dependencies.auth import get_current_user, get_current_user_silent
 from app.dependencies.chat import get_current_chat
-from app.dependencies.connect_bot import connect_bot
+from app.dependencies.connect_bot import connect_bot, get_bot
+from app.dependencies.settings import get_settings
+from app.routes.folders import Folders
 
 router = APIRouter(
 	prefix='/files',
@@ -26,9 +28,26 @@ class Files:
 	chat: int = Depends(get_current_chat)
 	user: schemas.SessionUser = Depends(get_current_user)
 
-	@router.get("/{uuid}")
-	async def get(self, uuid: str):
-		return await FileDAL.get_or_none(self.user.id, uuid)
+	@staticmethod
+	async def try_get_file(uuid: str, user: Union[schemas.SessionUser, None], **kwargs):
+		db_file = await FileDAL.get_db_model_or_none(uuid=uuid, **kwargs)
+
+		current_user_id = getattr(user, 'id', None)
+		current_user_email = getattr(user, 'email', None)
+
+		if db_file and \
+			(
+				db_file.is_public or \
+				(current_user_id and db_file.owner_id == current_user_id) or \
+				(current_user_email and await db_file.shares.filter(shared_user_email=current_user_email).exists())
+			):
+			return db_file
+
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail=f'file {uuid} does not exist'
+		)
+
 
 	@router.patch("/rename/{uuid}/{new_name}")
 	async def rename(self, uuid: str, new_name: str):
@@ -38,6 +57,10 @@ class Files:
 				status_code=status.HTTP_400_BAD_REQUEST,
 				detail=f'file {uuid} does not exist'
 			)
+
+	@router.patch("/change_public_status/{is_public}/{uuid}")
+	async def change_public_status(self, is_public: bool, uuid: str):
+		await FileDAL.update(self.user.id, uuid, is_public=is_public)
 
 	@router.delete("/{uuid}")
 	async def delete(self, uuid: str):
@@ -53,13 +76,7 @@ class Files:
 		def progress_callback(current, total):
 			print(f'{current * 100 / total}%')
 
-		folder = await FolderDAL.get_db_model_or_none(owner=self.user.id, uuid=folder_uuid)
-		if not folder:
-			raise HTTPException(
-				status_code=status.HTTP_400_BAD_REQUEST,
-				detail=f'folder {folder_uuid} does not exist'
-			)
-
+		folder = await Folders.try_get_folder(folder_uuid, self.user, owner_id=self.user.id)
 		if await folder.files.filter(name=file_name).exists():
 			raise HTTPException(
 				status_code=status.HTTP_400_BAD_REQUEST,
@@ -78,16 +95,25 @@ class Files:
 			tg_message_id=message.id
 		))
 
-	@router.get("/download/{uuid}")
-	async def download_file(self, uuid: str):
-		file = await FileDAL.get_db_model_or_none(owner=self.user.id, uuid=uuid)
-		if not file:
-			raise HTTPException(
-				status_code=status.HTTP_400_BAD_REQUEST,
-				detail=f'file {uuid} does not exist'
-			)
-
-		message = await self.bot.get_messages(self.chat, ids=file.tg_message_id)
-		return StreamingResponse(
-			fast_telethon.iter_download(self.bot, message.document)
+# Routes that don't depend on the user being logged in.
+@router.get("/{uuid}")
+async def get(uuid: str, request: Request):
+	return await schemas.ViewFile.from_tortoise_orm(
+		await Files.try_get_file(
+			uuid,
+			get_current_user_silent(request)
 		)
+	)
+
+@router.get("/download/{uuid}")
+async def download_file(uuid: str, request: Request):
+	db_file = await Files.try_get_file(
+		uuid,
+		get_current_user_silent(request)
+	)
+	owner = await db_file.owner
+	bot = await get_bot(owner.bot_token, owner.email, get_settings())
+	message = await bot.get_messages(owner.chat_id, ids=db_file.tg_message_id)
+	return StreamingResponse(
+		fast_telethon.iter_download(bot, message.document)
+	)

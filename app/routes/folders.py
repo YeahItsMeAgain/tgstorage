@@ -1,3 +1,4 @@
+from typing import Union
 from starlette import status
 from fastapi_restful.cbv import cbv
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -6,7 +7,7 @@ from app.db import schemas
 from app.db.crud.folder import FolderDAL
 from app.db.crud.user import UserDAL
 from app.db.schemas.user import SessionUser
-from app.dependencies.auth import get_current_user
+from app.dependencies.auth import get_current_user, get_current_user_silent
 
 router = APIRouter(
 	prefix='/folders',
@@ -20,14 +21,23 @@ class Folders:
 	user: SessionUser = Depends(get_current_user)
 
 	@staticmethod
-	async def try_get_folder(owner_id: int, uuid: str):
-		db_folder = await FolderDAL.get_db_model_or_none(owner_id=owner_id, uuid=uuid)
-		if not db_folder:
-			raise HTTPException(
-				status_code=status.HTTP_400_BAD_REQUEST,
-				detail=f'folder {uuid} does not exist'
-			)
-		return db_folder
+	async def try_get_folder(uuid: str, user: Union[schemas.SessionUser, None], **kwargs):
+		db_folder = await FolderDAL.get_db_model_or_none(uuid=uuid, **kwargs)
+
+		current_user_id = getattr(user, 'id', None)
+		current_user_email = getattr(user, 'email', None)
+
+		if db_folder and \
+			(
+				(current_user_id and db_folder.owner_id == current_user_id) or \
+				await FolderDAL.is_public_or_shared(uuid, current_user_email)
+			):
+			return db_folder
+
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail=f'folder {uuid} does not exist'
+		)
 
 	@router.get("/root")
 	async def root(self):
@@ -36,7 +46,7 @@ class Folders:
 
 	@router.post("/{parent_uuid}/{folder_name}")
 	async def create(self, parent_uuid: str, folder_name: str):
-		db_folder = await Folders.try_get_folder(self.user.id, parent_uuid)
+		db_folder = await Folders.try_get_folder(parent_uuid, self.user, owner_id=self.user.id)
 		await FolderDAL.get_db_or_create(
 			schemas.CreateFolder(
 				owner_id=self.user.id,
@@ -70,21 +80,8 @@ class Folders:
 # Routes that don't depend on the user being logged in.
 @router.get("/{uuid}")
 async def get(uuid: str, request: Request):
-	db_folder = await FolderDAL.get_db_model_or_none(uuid)
-	if not db_folder:
-		raise HTTPException(
-			status_code=status.HTTP_400_BAD_REQUEST,
-			detail=f'folder {uuid} does not exist'
+	return await schemas.ViewFolder.from_tortoise_orm(
+		await Folders.try_get_folder(
+			uuid, get_current_user_silent(request)
 		)
-
-	try:
-		current_user = get_current_user(request)
-		current_user_id = current_user.id
-		current_user_email = current_user.email
-	except:
-		current_user_id = None
-		current_user_email = None
-
-	if (current_user_id and db_folder.owner_id == current_user_id) or \
-			await FolderDAL.is_public_or_shared(uuid, current_user_email):
-		return await schemas.ViewFolder.from_tortoise_orm(db_folder)
+	)

@@ -24,4 +24,4 @@ class FileDAL:
 
 	@staticmethod
 	async def update(owner: int, uuid: str, **kwargs):
-		return await models.File.filter(owner=owner, uuid=uuid).update(**kwargs)
+		return await models.File.filter(owner_id=owner, uuid=uuid).first().update(**kwargs)

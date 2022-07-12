@@ -26,4 +26,7 @@ def get_current_user(request: Request) -> SessionUser:
     return _get_current_user(request, False)
 
 def get_current_user_silent(request: Request) -> SessionUser:
-    return _get_current_user(request, True)
+    try:
+        return _get_current_user(request, True)
+    except:
+        return None

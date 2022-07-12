@@ -5,7 +5,7 @@ Tortoise.init_models(["app.db.models"], "models")
 from .user import CreateUser, SessionUser, UserType
 from .folder import ViewFolder, CreateFolder, FolderType
 from .file import ViewFile, CreateFile, FileType
-from .share import ViewShare, CreateShare, ShareType
+from .share import ViewShare, ShareType
 
 __all__ = [
     'UserType',
@@ -19,5 +19,4 @@ __all__ = [
     ViewFile.__name__,
     CreateFile.__name__,
     ViewShare.__name__,
-    CreateShare.__name__,
 ]
