@@ -32,22 +32,6 @@ class Shares:
 		db_folder = await Folders.try_get_folder(self.user.id, uuid)
 
 		if should_share:
-			await ShareDAL.get_db_or_create(
-				schemas.CreateShare(
-					owner_id=self.user.id,
-					folder_id=db_folder.id,
-					shared_user_email=shared_user_email
-				)
-			)
-			return True
+			return await ShareDAL.share_folder_tree(db_folder, shared_user_email)
 
-		deleted_count = await ShareDAL.delete(
-			owner=self.user.id,
-			shared_user_email=shared_user_email,
-			folder=db_folder.id
-		)
-		if not deleted_count:
-			raise HTTPException(
-				status_code=status.HTTP_400_BAD_REQUEST,
-				detail='share does not exist'
-			)
+		await ShareDAL.unshare_folder_tree(db_folder, shared_user_email)

@@ -65,12 +65,7 @@ class Folders:
 
 	@router.patch("/change_public_status/{is_public}/{uuid}")
 	async def change_public_status(self, is_public: bool, uuid: str):
-		updated_count = await FolderDAL.update(owner=self.user.id, uuid=uuid, is_public=is_public)
-		if not updated_count:
-			raise HTTPException(
-				status_code=status.HTTP_400_BAD_REQUEST,
-				detail=f'folder {uuid} does not exist'
-			)
+		await FolderDAL.update_tree(owner=self.user.id, uuid=uuid, is_public=is_public)
 
 # Routes that don't depend on the user being logged in.
 @router.get("/{uuid}")
