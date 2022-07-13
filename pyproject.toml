@@ -29,6 +29,8 @@ aerich = "^0.6.3"
 
 [tool.poetry.dev-dependencies]
 pylint = "^2.14.4"
+pylint-django = "^2.5.3"
+Django = "^4.0.6"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
