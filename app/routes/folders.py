@@ -17,25 +17,6 @@ router = APIRouter(prefix='/folders')
 class Folders:
 	user: SessionUser = Depends(get_current_user)
 
-	@staticmethod
-	async def try_get_folder(uuid: str, user: Union[schemas.SessionUser, None], **kwargs):
-		db_folder = await FolderDAL.get_db_model_or_none(uuid=uuid, **kwargs)
-
-		current_user_id = getattr(user, 'id', None)
-		current_user_email = getattr(user, 'email', None)
-
-		if db_folder and \
-			(
-				(current_user_id and (await db_folder.editors.filter(id=current_user_id).exists())) or \
-				await FolderDAL.is_public_or_shared(uuid, current_user_email)
-			):
-			return db_folder
-
-		raise HTTPException(
-			status_code=status.HTTP_400_BAD_REQUEST,
-			detail=f'folder {uuid} does not exist'
-		)
-
 	@router.get("/root")
 	async def root(self):
 		db_user = await UserDAL.get_db_model_or_none(**self.user.dict())
@@ -43,7 +24,7 @@ class Folders:
 
 	@router.post("/{parent_uuid}/{folder_name}")
 	async def create(self, parent_uuid: str, folder_name: str):
-		db_parent = await Folders.try_get_folder(parent_uuid, self.user, editors__in=[self.user.id])
+		db_parent = await FolderDAL.try_get_resource(uuid=parent_uuid, user=self.user, editors__in=[self.user.id])
 		db_folder = await FolderDAL.get_db_or_create(
 			schemas.CreateFolder(
 				owner_id=db_parent.owner_id,
@@ -56,22 +37,21 @@ class Folders:
 
 	@router.delete("/{uuid}")
 	async def delete(self, uuid: str):
-		return await FolderDAL.delete([self.user.id], uuid)
+		return await FolderDAL.delete(editors=[self.user.id], uuid=uuid)
 
 	@router.patch("/rename/{uuid}/{new_name}")
 	async def rename(self, uuid: str, new_name: str):
-		return await FolderDAL.update([self.user.id], uuid=uuid, name=new_name)
+		return await FolderDAL.update(editors=[self.user.id], uuid=uuid, name=new_name)
 
 	@router.patch("/move/{source_uuid}/{target_uuid}")
 	async def move(self, source_uuid: str, target_uuid: str):
 		db_folder_source, db_folder_target = await asyncio.gather(
-			Folders.try_get_folder(source_uuid, self.user, editors__in=[self.user.id]),
-			Folders.try_get_folder(target_uuid, self.user, editors__in=[self.user.id])
+			FolderDAL.try_get_resource(uuid=source_uuid, user=self.user, editors__in=[self.user.id], is_root=False),
+			FolderDAL.try_get_resource(uuid=target_uuid, user=self.user, editors__in=[self.user.id])
 		)
 
 		# Can be moved only if the source is not a root folder and the owners are the same.
 		if db_folder_source.id != db_folder_target.id and \
-			not db_folder_source.is_root and \
 			db_folder_source.owner_id == db_folder_target.owner_id:
 			await FolderDAL.update_db_model(db_folder_source, parent_id=db_folder_target.id)
 
@@ -82,7 +62,7 @@ class Folders:
 	@router.patch("/editors/{method}/{uuid}/{editor_email}")
 	async def change_editors(self, method: EditorMethod, uuid: str, editor_email: str):
 		db_folder, db_user = await asyncio.gather(
-			FolderDAL.get_db_model_or_none(uuid, owner_id=self.user.id),
+			FolderDAL.get_db_model_or_none(uuid=uuid, owner_id=self.user.id),
 			UserDAL.get_db_model_or_none(email=editor_email),
 		)
 
@@ -90,7 +70,7 @@ class Folders:
 			(await db_folder.owner).email == editor_email :
 			raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
 
-		await FolderDAL.change_tree_editors(db_folder, db_user, method)
+		await FolderDAL.change_tree_editors(db_folder=db_folder, editor=db_user, method=method)
 
 
 # Routes that don't depend on the user being logged in.
@@ -101,7 +81,5 @@ class AnonymousFolders:
 	@router.get("/{uuid}")
 	async def get(self, uuid: str):
 		return await schemas.ViewFolder.from_tortoise_orm(
-			await Folders.try_get_folder(
-				uuid, self.user_or_none
-			)
+			await FolderDAL.try_get_resource(uuid=uuid, user=self.user_or_none)
 		)

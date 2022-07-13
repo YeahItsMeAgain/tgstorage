@@ -1,15 +1,9 @@
 from typing import List
 from app.db import models, schemas
+from app.db.crud.resource import ResourceDAL
 
-class FileDAL:
-	@staticmethod
-	async def get_db_or_create(file: schemas.FileType):
-		db_file, _ = await models.File.get_or_create(**file.dict())
-		return db_file
-
-	@staticmethod
-	async def get_db_model_or_none(uuid: str, **kwargs):
-		return await models.File.get_or_none(uuid=uuid, **kwargs)
+class FileDAL(ResourceDAL):
+	model = models.File
 
 	@staticmethod
 	async def get_or_none(editors: List[int], uuid: str):
@@ -18,24 +12,3 @@ class FileDAL:
 			return None
 
 		return await schemas.ViewFile.from_tortoise_orm(db_file)
-
-	@staticmethod
-	async def delete(editors: List[int], uuid: str):
-		db_file = await FileDAL.get_db_model_or_none(uuid, editors__in=editors)
-		if not db_file:
-			return False
-
-		await db_file.delete()
-		return True
-
-	@staticmethod
-	async def update_db_model(db_file: models.File, **kwargs):
-		await db_file.update_from_dict(kwargs).save(update_fields=kwargs.keys())
-		return True
-
-	@staticmethod
-	async def update(editors: List[int], uuid: str, **kwargs):
-		db_file = await FileDAL.get_db_model_or_none(uuid, editors__in=editors)
-		if not db_file:
-			return False
-		return await FileDAL.update_db_model(db_file, **kwargs)

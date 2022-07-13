@@ -1,15 +1,9 @@
-from app.db import models, schemas
+from app.db import models
+from app.db.crud.crud import DAL
 
-class UserDAL:
-    @staticmethod
-    async def get_db_or_create(user: schemas.UserType) -> models.User:
-        db_user, _  = await models.User.get_or_create(**user.dict())
-        return db_user
+class UserDAL(DAL):
+	model = models.User
 
-    @staticmethod
-    async def get_db_model_or_none(**kwargs) -> models.User:
-        return await models.User.get_or_none(**kwargs)
-
-    @staticmethod
-    async def update(filter_args: dict, update_args: dict):
-        await models.User.select_for_update().filter(**filter_args).update(**update_args)
+	@staticmethod
+	async def update(filter_args: dict, update_args: dict):
+		await super(UserDAL, UserDAL).update(filter_args, update_args)
