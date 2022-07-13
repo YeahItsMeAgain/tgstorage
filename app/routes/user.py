@@ -40,6 +40,10 @@ router = APIRouter(prefix='/user')
 class User:
     user: SessionUser = Depends(get_current_user)
 
+    @router.get('/me')
+    async def me(self):
+        return self.user
+
     @router.get('/setup')
     async def setup(self, request: Request):
         db_user = await UserDAL.get_db_model_or_none(**self.user.dict())
