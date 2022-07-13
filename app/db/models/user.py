@@ -5,7 +5,6 @@ from app.db.models.timestamp_mixin import TimestampMixin
 from app.db import schemas
 from .folder import Folder
 from .file import File
-from .shared_resource import SharedResource
 
 class User(TimestampMixin, Model):
     id = fields.IntField(pk=True)
@@ -16,8 +15,9 @@ class User(TimestampMixin, Model):
     is_active = fields.BooleanField(default=True)
 
     folders: fields.ReverseRelation['Folder']
+    created_folders: fields.ReverseRelation['Folder']
     files: fields.ReverseRelation['File']
-    shares: fields.ReverseRelation['SharedResource']
+    created_files: fields.ReverseRelation['File']
 
     async def root_folder(self):
         db_folder = await Folder.get_or_none(owner=self.id, is_root=True)
@@ -28,4 +28,4 @@ class User(TimestampMixin, Model):
 
     class PydanticMeta:
         computed = ["root_folder"]
-        include = ['name', 'email']
+        include = ['name']

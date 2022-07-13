@@ -13,14 +13,12 @@ class ShareDAL:
 			shares.extend(
 				[
 					models.SharedResource(
-						owner_id=db_folder.owner_id,
 						folder_id=db_folder.id,
 						shared_user_email=shared_user_email
 					)
 				] +
 				[
 					models.SharedResource(
-						owner_id=db_folder.owner_id,
 						file_id=file_id,
 						shared_user_email=shared_user_email
 					)
@@ -58,7 +56,6 @@ class ShareDAL:
 	@staticmethod
 	async def share_file(db_file: models.File, shared_user_email: str):
 		await models.SharedResource.get_or_create(
-			owner_id=db_file.owner_id,
 			file_id=db_file.id,
 			shared_user_email=shared_user_email
 		)
@@ -66,7 +63,6 @@ class ShareDAL:
 	@staticmethod
 	async def unshare_file(db_file: models.File, shared_user_email: str):
 		await models.SharedResource.filter(
-			owner_id=db_file.owner_id,
 			file_id=db_file.id,
 			shared_user_email=shared_user_email
 		).delete()

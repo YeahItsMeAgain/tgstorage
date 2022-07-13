@@ -7,8 +7,8 @@ class UserDAL:
         return db_user
 
     @staticmethod
-    async def get_db_model_or_none(user: schemas.UserType) -> models.User:
-        return await models.User.get_or_none(**user.dict())
+    async def get_db_model_or_none(**kwargs) -> models.User:
+        return await models.User.get_or_none(**kwargs)
 
     @staticmethod
     async def update(filter_args: dict, update_args: dict):

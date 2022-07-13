@@ -47,7 +47,7 @@ class User:
 
     @router.get('/setup')
     async def setup(self, request: Request):
-        db_user = await UserDAL.get_db_model_or_none(self.user)
+        db_user = await UserDAL.get_db_model_or_none(**self.user.dict())
 
         if not db_user.bot_token or not db_user.chat_id:
             return RedirectResponse(url=request.url_for(User.get_data.__name__))
