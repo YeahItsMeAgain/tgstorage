@@ -34,12 +34,7 @@ template = Template('''
 </html>
 ''')
 
-router = APIRouter(
-    prefix='/user',
-    tags=['user'],
-    responses={404: {"description": "Not found"}}
-)
-
+router = APIRouter(prefix='/user')
 
 @cbv(router)
 class User:

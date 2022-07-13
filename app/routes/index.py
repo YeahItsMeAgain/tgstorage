@@ -6,11 +6,7 @@ from app.db.schemas.user import SessionUser
 
 from app.dependencies.auth import get_current_user
 
-router = APIRouter(
-	prefix='/index',
-	tags=['index'],
-	responses={404: {"description": "Not found"}}
-)
+router = APIRouter(prefix='/index')
 
 @cbv(router)
 class Index:

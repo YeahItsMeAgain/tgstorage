@@ -18,12 +18,7 @@ from app.dependencies.connect_bot import connect_bot, get_bot
 from app.dependencies.settings import get_settings
 from app.routes.folders import Folders
 
-router = APIRouter(
-	prefix='/files',
-	tags=['files'],
-	responses={404: {"description": "Not found"}}
-)
-
+router = APIRouter(prefix='/files')
 
 @cbv(router)
 class Files:

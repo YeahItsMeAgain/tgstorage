@@ -14,12 +14,7 @@ from app.dependencies.settings import get_settings
 from app.routes.user import User as UserRouter
 from app.settings import Settings
 
-router = APIRouter(
-    prefix='/auth',
-    tags=['auth'],
-    responses={404: {"description": "Not found"}}
-)
-
+router = APIRouter(prefix='/auth')
 
 @cbv(router)
 class Auth:

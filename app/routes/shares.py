@@ -7,12 +7,7 @@ from app.dependencies.auth import get_current_user
 from app.routes.files import Files
 from app.routes.folders import Folders
 
-router = APIRouter(
-	prefix='/shares',
-	tags=['share'],
-	responses={404: {"description": "Not found"}}
-)
-
+router = APIRouter(prefix='/shares')
 
 @cbv(router)
 class Shares:
