@@ -11,7 +11,7 @@ from app.db.models.shared_resource import EditorMethod
 from app.db.schemas.user import SessionUser
 from app.dependencies.auth import get_current_user, get_current_user_silent
 
-router = APIRouter(prefix='/folders')
+router = APIRouter(prefix='/folder')
 
 @cbv(router)
 class Folders:

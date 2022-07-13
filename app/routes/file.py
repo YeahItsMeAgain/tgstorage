@@ -18,7 +18,7 @@ from app.dependencies.chat import get_current_chat
 from app.dependencies.connect_bot import connect_bot, get_bot
 from app.dependencies.settings import get_settings
 
-router = APIRouter(prefix='/files')
+router = APIRouter(prefix='/file')
 @cbv(router)
 class Files:
 	bot: TelegramClient = Depends(connect_bot)

@@ -1,8 +1,8 @@
-from .files import router as files_router
-from .folders import router as folder_router
+from .file import router as files_router
+from .folder import router as folder_router
 from .auth import router as auth_router
 from .user import router as user_router
-from .shares import router as shares_router
+from .share import router as shares_router
 
 
 routers = [

@@ -7,7 +7,7 @@ from app.db.crud.share import ShareDAL
 from app.db.schemas.user import SessionUser
 from app.dependencies.auth import get_current_user
 
-router = APIRouter(prefix='/shares')
+router = APIRouter(prefix='/share')
 
 @cbv(router)
 class Shares:
