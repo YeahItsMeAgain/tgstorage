@@ -73,6 +73,17 @@ class Files:
 		await getattr(db_file.editors, method.value)(db_user)
 		return True
 
+	@router.patch("/move/{file_uuid}/{folder_uuid}")
+	async def move(self, file_uuid: str, folder_uuid: str):
+		db_file_source, db_folder_target = await asyncio.gather(
+			Files.try_get_file(file_uuid, self.user, editors__in=[self.user.id]),
+			Folders.try_get_folder(folder_uuid, self.user, editors__in=[self.user.id])
+		)
+
+		# Can be moved only if the owners are the same.
+		if db_file_source.owner_id == db_folder_target.owner_id:
+			return await FileDAL.update_db_model(db_file_source, folder_id=db_folder_target.id)
+
 	@router.delete("/{uuid}")
 	async def delete(self, uuid: str):
 		return await FileDAL.delete([self.user.id], uuid)

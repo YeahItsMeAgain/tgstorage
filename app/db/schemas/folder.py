@@ -11,7 +11,7 @@ ViewFolder = pydantic_model_creator(
 CreateFolder = pydantic_model_creator(
     FolderModel, name=f'Create{FolderModel.__name__}',
     include=['parent_id', 'owner_id', 'creator_id', 'is_root', 'name'],
-    exclude=FolderModel.PydanticMeta.optional + ['creator', 'owner']
+    exclude=FolderModel.PydanticMeta.optional + ['creator', 'owner', 'editors']
 )
 
 FolderType = Union[ViewFolder, CreateFolder]

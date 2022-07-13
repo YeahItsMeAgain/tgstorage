@@ -67,6 +67,19 @@ class Folders:
 	async def rename(self, uuid: str, new_name: str):
 		return await FolderDAL.update([self.user.id], uuid=uuid, name=new_name)
 
+	@router.patch("/move/{source_uuid}/{target_uuid}")
+	async def move(self, source_uuid: str, target_uuid: str):
+		db_folder_source, db_folder_target = await asyncio.gather(
+			Folders.try_get_folder(source_uuid, self.user, editors__in=[self.user.id]),
+			Folders.try_get_folder(target_uuid, self.user, editors__in=[self.user.id])
+		)
+
+		# Can be moved only if the source is not a root folder and the owners are the same.
+		if db_folder_source.id != db_folder_target.id and \
+			not db_folder_source.is_root and \
+			db_folder_source.owner_id == db_folder_target.owner_id:
+			await FolderDAL.update_db_model(db_folder_source, parent_id=db_folder_target.id)
+
 	@router.patch("/change_public_status/{is_public}/{uuid}")
 	async def change_public_status(self, is_public: bool, uuid: str):
 		return await FolderDAL.update_tree(owner_id=self.user.id, uuid=uuid, is_public=is_public)

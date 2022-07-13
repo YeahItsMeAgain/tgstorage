@@ -33,18 +33,22 @@ class FolderDAL:
 	@staticmethod
 	async def delete(editors: List[int], uuid: str):
 		db_folder = await FolderDAL.get_db_model_or_none(uuid, editors__in=editors)
-		if db_folder:
-			await db_folder.delete()
-			return True
-		return False
+		if not db_folder:
+			return False
+		await db_folder.delete()
+		return True
+
+	@staticmethod
+	async def update_db_model(db_folder: models.Folder, **kwargs):
+		await db_folder.update_from_dict(kwargs).save(update_fields=kwargs.keys())
+		return True
 
 	@staticmethod
 	async def update(editors: List[int], uuid: str, **kwargs):
 		db_folder = await FolderDAL.get_db_model_or_none(uuid, editors__in=editors)
-		if db_folder:
-			await db_folder.update_from_dict(kwargs).save(update_fields=kwargs.keys())
-			return True
-		return False
+		if not db_folder:
+			return False
+		return await FolderDAL.update_db_model(db_folder, **kwargs)
 
 	@staticmethod
 	async def update_tree(owner_id: int, uuid: str, **kwargs):

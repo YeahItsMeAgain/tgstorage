@@ -22,15 +22,20 @@ class FileDAL:
 	@staticmethod
 	async def delete(editors: List[int], uuid: str):
 		db_file = await FileDAL.get_db_model_or_none(uuid, editors__in=editors)
-		if db_file:
-			await db_file.delete()
-			return True
-		return False
+		if not db_file:
+			return False
+
+		await db_file.delete()
+		return True
+
+	@staticmethod
+	async def update_db_model(db_file: models.File, **kwargs):
+		await db_file.update_from_dict(kwargs).save(update_fields=kwargs.keys())
+		return True
 
 	@staticmethod
 	async def update(editors: List[int], uuid: str, **kwargs):
 		db_file = await FileDAL.get_db_model_or_none(uuid, editors__in=editors)
-		if db_file:
-			await db_file.update_from_dict(kwargs).save(update_fields=kwargs.keys())
-			return True
-		return False
+		if not db_file:
+			return False
+		return await FileDAL.update_db_model(db_file, **kwargs)
