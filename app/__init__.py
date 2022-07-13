@@ -20,6 +20,7 @@ redis_connector = redis.Redis(
 redis_connector.ping()
 
 app = FastAPI(
+    docs_url=None, redoc_url=None,
     middleware=[
         Middleware(
             SessionMiddleware,
