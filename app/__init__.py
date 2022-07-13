@@ -46,6 +46,8 @@ oauth.register(
 
 from app.routes import routers
 from app.events import exceptions_handlers
+from app.middlewares import LimitUploadSize
+
 register_tortoise(
     app,
     config=TORTOISE_ORM,
@@ -59,3 +61,5 @@ for router in routers:
 
 for status_code, handler in exceptions_handlers.items():
     app.add_exception_handler(status_code, handler)
+
+app.add_middleware(LimitUploadSize, max_upload_size=settings.MAX_UPLOAD_SIZE)

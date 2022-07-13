@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     API_HASH: str
     SECRET_KEY: str
     SECRET_KEY2: str
+    MAX_UPLOAD_SIZE: int
     ALLOWED_MAILS: list
 
     class Config:
