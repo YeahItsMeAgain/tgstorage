@@ -1,5 +1,6 @@
 import asyncio
 from typing import Union
+from aioredis import lock
 from starlette import status
 from fastapi import APIRouter, Depends, HTTPException
 from telethon import TelegramClient
@@ -7,7 +8,7 @@ from starlette.requests import Request
 from fastapi_restful.cbv import cbv
 from fastapi.responses import StreamingResponse
 
-from app import fast_telethon
+from app import fast_telethon, redis_connector, settings
 from app.db import schemas
 from app.db.crud.file import FileDAL
 from app.db.crud.folder import FolderDAL
@@ -61,34 +62,47 @@ class Files:
 	async def delete(self, uuid: str):
 		return await FileDAL.delete(editors=[self.user.id], uuid=uuid)
 
+	@router.get("/upload_status/{folder_uuid}/{file_name}")
+	async def get_upload_status(self, folder_uuid: str, file_name: str, request: Request):
+		return await FileDAL.get_upload_status(redis_connector, self.user.id, folder_uuid, file_name)
+
 	@router.post("/upload/{folder_uuid}/{file_name}")
 	async def create_file(self, folder_uuid: str, file_name: str, request: Request):
-		def progress_callback(current, total):
-			print(f'{current * 100 / total}%')
+		async def progress_callback(current, total):
+			await FileDAL.set_upload_status(redis_connector, self.user.id, folder_uuid, file_name, current, total)
 
 		db_folder = await FolderDAL.try_get_resource(uuid=folder_uuid, user=self.user, editors__in=[self.user.id])
 		if await db_folder.files.filter(name=file_name).exists():
-			raise HTTPException(
-				status_code=status.HTTP_400_BAD_REQUEST,
-				detail=f'file {file_name} already exists'
+			raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f'file {file_name} already exists')
+
+		upload_lock = lock.Lock(
+			redis_connector, FileDAL.get_user_upload_redis_key(self.user.id),
+			timeout=settings.UPLOAD_EXPIRE_SECONDS, blocking=False
+		)
+		if await upload_lock.locked():
+			raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='already uploading!')
+
+		async with upload_lock:
+			message, editors = await asyncio.gather(
+				self.bot.send_file(
+					self.chat,
+					await fast_telethon.upload_from_request(self.bot, request, file_name, progress_callback)
+				),
+				db_folder.editors.all()
 			)
 
-		message = await self.bot.send_file(
-			self.chat,
-			await fast_telethon.upload_from_request(self.bot, request, file_name, progress_callback)
-		)
-
-		db_file = await FileDAL.get_db_or_create(
-			schemas.CreateFile(
-				name=file_name,
-				owner_id=db_folder.owner_id,
-				creator_id=self.user.id,
-				folder_id=db_folder.id,
-				tg_message_id=message.id
+			await FileDAL.get_db_or_create(
+				schemas.CreateFile(
+					name=file_name,
+					owner_id=db_folder.owner_id,
+					creator_id=self.user.id,
+					folder_id=db_folder.id,
+					tg_message_id=message.id
+				),
+				editors=editors
 			)
-		)
-		await db_file.editors.add(*await db_folder.editors.all())
-		return True
+			await FileDAL.delete_upload_status(redis_connector, self.user.id, folder_uuid, file_name)
+			return True
 
 
 # Routes that don't depend on the user being logged in.

@@ -8,7 +8,7 @@ import logging
 import math
 import os
 from collections import defaultdict
-from typing import Optional, List, AsyncGenerator, Union, Awaitable, DefaultDict, Tuple, BinaryIO
+from typing import Callable, Optional, List, AsyncGenerator, Union, Awaitable, DefaultDict, Tuple, BinaryIO
 from fastapi import Request
 
 from telethon import utils, helpers, TelegramClient
@@ -326,7 +326,7 @@ async def upload_file(client: TelegramClient,
 async def upload_from_request(client: TelegramClient,
                               request: Request,
                               file_name: str,
-                              progress_callback: callable
+                              progress_callback: Callable[[int, int], Awaitable[None]]
                               ) -> Tuple[TypeInputFile, int]:
     uploaded = 0
     buffer = bytearray()
@@ -335,14 +335,11 @@ async def upload_from_request(client: TelegramClient,
     file_id = helpers.generate_random_long()
     file_size = int(request.headers['content-length'])
     part_size, part_count, is_large = await uploader.init_upload(file_id, file_size)
-    print(f'{file_size=} {part_count=}, {is_large=}')
+    # print(f'{file_size=} {part_count=}, {is_large=}')
 
     async for big_chunk in request.stream():
         for data in chunker(big_chunk, part_size):
-            if progress_callback:
-                r = progress_callback(uploaded, file_size)
-                if inspect.isawaitable(r):
-                    await r
+            await progress_callback(uploaded, file_size)
             if not is_large:
                 hash_md5.update(data)
             if len(buffer) == 0 and len(data) == part_size:

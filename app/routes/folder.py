@@ -25,15 +25,15 @@ class Folders:
 	@router.post("/{parent_uuid}/{folder_name}")
 	async def create(self, parent_uuid: str, folder_name: str):
 		db_parent = await FolderDAL.try_get_resource(uuid=parent_uuid, user=self.user, editors__in=[self.user.id])
-		db_folder = await FolderDAL.get_db_or_create(
+		await FolderDAL.get_db_or_create(
 			schemas.CreateFolder(
 				owner_id=db_parent.owner_id,
 				creator_id=self.user.id,
 				parent_id=db_parent.id,
 				name=folder_name
-			)
+			),
+			editors=await db_parent.editors.all()
 		)
-		await db_folder.editors.add(*await db_parent.editors.all())
 
 	@router.delete("/{uuid}")
 	async def delete(self, uuid: str):

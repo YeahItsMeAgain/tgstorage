@@ -39,12 +39,12 @@ class Auth:
                     name=user.name, email=user.email
                 )
             )
-            db_folder = await FolderDAL.get_db_or_create(
+            await FolderDAL.get_db_or_create(
                 schemas.CreateFolder(
                     owner_id=db_user.id, creator_id=db_user.id, is_root=True, name='root'
-                )
+                ),
+                editors=[db_user]
             )
-            await db_folder.editors.add(db_user)
 
             request.session['id'] = db_user.id
             request.session['name'] = db_user.name

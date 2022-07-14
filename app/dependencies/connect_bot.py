@@ -3,13 +3,13 @@ from fastapi import Depends, Request
 from teleredis import RedisSession
 from telethon.errors.rpcerrorlist import AccessTokenInvalidError
 
-from app import redis_connector
+from app import teleredis_connector
 from app.settings import Settings
 from app.dependencies.settings import get_settings
 
 async def get_bot(bot_token: str, user_email: str, settings: Settings):
     session_name = f'{user_email}_{bot_token}'
-    bot = TelegramClient(RedisSession(session_name, redis_connector), settings.API_ID, settings.API_HASH)
+    bot = TelegramClient(RedisSession(session_name, teleredis_connector), settings.API_ID, settings.API_HASH)
     if not bot.is_connected():
         await bot.start(bot_token=bot_token)
     return bot

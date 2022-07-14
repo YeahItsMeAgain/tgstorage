@@ -1,11 +1,19 @@
 from typing import List, Union
+from pydantic import BaseModel
 from starlette import status
 from fastapi import HTTPException
+from tortoise import Model
 
 from app.db import schemas
 from app.db.crud.crud import DAL
 
 class ResourceDAL(DAL):
+	@classmethod
+	async def get_db_or_create(cls, model: BaseModel, editors=List[Model]):
+		db_resource = await super(ResourceDAL, cls).get_db_or_create(model)
+		await db_resource.editors.add(*editors)
+		return db_resource
+
 	@classmethod
 	async def try_get_resource(cls, uuid: str, user: Union[schemas.UserType, None], **kwargs):
 		db_resource = await cls.get_db_model_or_none(uuid=uuid, **kwargs)
@@ -25,7 +33,6 @@ class ResourceDAL(DAL):
 			status_code=status.HTTP_400_BAD_REQUEST,
 			detail=f'{uuid} does not exist'
 		)
-
 
 	@classmethod
 	async def delete(cls, editors: List[int], uuid: str):

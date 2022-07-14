@@ -1,4 +1,5 @@
 import redis
+import aioredis
 from fastapi import FastAPI
 from authlib.integrations.starlette_client import OAuth
 from starlette.config import Config
@@ -14,10 +15,9 @@ from app.dependencies.settings import get_settings
 config = Config('.env')  # read config from .env file
 settings = get_settings()
 
-redis_connector = redis.Redis(
-    host='localhost', port=6379, db=0, decode_responses=False
-)
-redis_connector.ping()
+teleredis_connector = redis.Redis.from_url(settings.REDIS_URL)
+redis_connector = aioredis.Redis.from_url(settings.REDIS_URL)
+
 
 app = FastAPI(
     docs_url=None, redoc_url=None,
@@ -27,7 +27,7 @@ app = FastAPI(
             secret_key=settings.SECRET_KEY,
             cookie_name='session',
             backend_type=BackendType.redis,
-            backend_client=redis_connector
+            backend_client=teleredis_connector
         ),
         Middleware(
             CSRFProtectMiddleware,
@@ -64,3 +64,13 @@ for status_code, handler in exceptions_handlers.items():
     app.add_exception_handler(status_code, handler)
 
 app.add_middleware(LimitUploadSize, max_upload_size=settings.MAX_UPLOAD_SIZE)
+
+@app.on_event("startup")
+async def create_redis():
+    teleredis_connector.ping()
+    await redis_connector
+
+@app.on_event("shutdown")
+async def close_redis():
+    await redis_connector.close()
+    teleredis_connector.close()
