@@ -7,6 +7,9 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     SECRET_KEY2: str
     REDIS_URL: str
+    MYSQL_USER: str
+    MYSQL_PASSWORD: str
+    MYSQL_DATABASE: str
     UPLOAD_EXPIRE_SECONDS: int
     MAX_UPLOAD_SIZE: int
     ALLOWED_MAILS: list

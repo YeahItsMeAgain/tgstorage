@@ -172,3 +172,5 @@ backend_temp/*
 *.env
 *.db*
 .idea/
+
+services/nginx/crontab

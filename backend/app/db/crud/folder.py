@@ -30,10 +30,10 @@ class FolderDAL(ResourceDAL):
 			])
 		await update_tree_inner(db_folder)
 
-		await asyncio.gather(*[
-			models.Folder.bulk_update(folders, kwargs.keys()) if folders else [],
-			models.File.bulk_update(files, kwargs.keys()) if folders else [],
-		])
+		await asyncio.gather(*filter(None, [
+			models.Folder.bulk_update(folders, kwargs.keys()) if folders else None,
+			models.File.bulk_update(files, kwargs.keys()) if files else None
+		]))
 
 	@staticmethod
 	async def change_tree_editors(db_folder: models.Folder, editor: models.User, method=EditorMethod):

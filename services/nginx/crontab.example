@@ -1,0 +1,3 @@
+# m h  dom mon dow   command
+0 5  * * *  docker-compose -f /root/app/docker-compose.yml -f /root/app/docker-compose.prod.yml up certbot 
+10 5 * * *  docker-compose -f /root/app/docker-compose.yml -f /root/app/docker-compose.prod.yml exec nginx nginx -s reload

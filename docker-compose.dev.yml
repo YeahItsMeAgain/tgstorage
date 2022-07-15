@@ -1,0 +1,19 @@
+version: "3.3"
+
+services:
+
+  nginx:
+    environment:
+      - DEV_DOMAIN
+    ports:
+      - 8080:80
+    volumes:
+      - ./services/nginx/templates_dev:/etc/nginx/templates:ro
+
+  mysql:
+    ports:
+      - 3306:3306
+
+  redis:
+    ports:
+      - 6379:6379
